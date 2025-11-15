@@ -1,0 +1,4 @@
+#  NutriDeliver - Food Delivery App
+
+
+NutriDeliver is a complete backend solution for a healthy food delivery ecosystem, supporting customers, restaurants, delivery riders, and administrators. The platform enables users to browse nutritious meals, place orders, manage carts, and track deliveries in real time. Restaurants can manage menus, orders, and analytics, while riders handle deliveries with live location updates and earnings tracking. The system includes secure authentication, payment processing, notifications, offers, and full platform oversight for admins—all built with a scalable, modular, and secure architecture.
