@@ -180,3 +180,18 @@ backend/
 
 ---
 
+## <a name="quick-start">Start Project</a>
+
+Follow these steps to set up the project locally on your machine.
+
+**Add the following to the .env file**
+
+server :
+
+```bash
+MONGODB_URI =*********
+CLIENT_URL =http://localhost:****
+
+NODE_ENV=development
+PORT=****
+```
