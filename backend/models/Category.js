@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 
 // Defines the structure for category documents with fields and validation
@@ -31,4 +31,4 @@ categorySchema.index({ name: 1 });
 // Creates index on isActive field for efficient filtering
 categorySchema.index({ isActive: 1 });
 
-module.exports = mongoose.model('Category', categorySchema);
+export default mongoose.model('Category', categorySchema);

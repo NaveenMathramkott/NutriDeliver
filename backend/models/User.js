@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from "mongoose"
+import bcrypt from "bcryptjs"
 
 // Defines the structure for User documents with fields and validations
 const userSchema = new mongoose.Schema({
@@ -201,4 +201,4 @@ userSchema.methods.toJSON = function() {
   return user;
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);
