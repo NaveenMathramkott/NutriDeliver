@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Defines the structure for Restautrant with fields and validations
 const restaurantSchema = new mongoose.Schema({
@@ -139,4 +139,4 @@ restaurantSchema.virtual('averageRating').get(function() {
   return this.rating;
 });
 
-module.exports = mongoose.model('Restaurant', restaurantSchema);
+export default mongoose.model('Restaurant', restaurantSchema);

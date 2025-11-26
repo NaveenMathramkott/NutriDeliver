@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // Defines the structure for Order with fields and validations
 const orderSchema = new mongoose.Schema(
@@ -237,4 +237,4 @@ orderSchema.pre("save", async function (next) {
   next();
 });
 
-module.exports = mongoose.model("Order", orderSchema);
+export default mongoose.model("Order", orderSchema);

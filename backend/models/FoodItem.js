@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // Defines the structure for foodItem documents with fields 
 const foodItemSchema = new mongoose.Schema({
@@ -126,4 +126,4 @@ foodItemSchema.index({ restaurantId: 1, isAvailable: 1 });
 // Index for category's available items
 foodItemSchema.index({ categoryId: 1, isAvailable: 1 });
 
-module.exports = mongoose.model('FoodItem', foodItem);
+export default mongoose.model('FoodItem', foodItemSchema);
