@@ -8,8 +8,10 @@ import {
   logout,
   refreshToken,
   forgotPassword,
+  verifyResetOTP,
   resetPassword,
   verifyEmail,
+  resendVerification,
   getCurrentUser
 } from '../controllers/authController.js';
 
@@ -19,8 +21,10 @@ const router = express.Router();
 router.post('/register', authLimiter, validate(validateRegister), register);
 router.post('/login', authLimiter, validate(validateLogin), login);
 router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/verify-reset-otp', authLimiter, verifyResetOTP);
 router.post('/reset-password', authLimiter, resetPassword);
 router.post('/verify-email', authLimiter, verifyEmail);
+router.post('/resend-verification', authLimiter, resendVerification);
 
 // Protected routes
 router.post('/logout', authenticate, logout);

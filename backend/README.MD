@@ -194,4 +194,16 @@ CLIENT_URL =http://localhost:****
 
 NODE_ENV=development
 PORT=****
+
+
+JWT_SECRET=*****************
+JWT_REFRESH_SECRET=*****************
+EMAIL_USER=*****************
+EMAIL_PASS=*****************
+
+STRIPE_SECRET_KEY=*****************
+
+CLOUDINARY_CLOUD_NAME=*****************
+CLOUDINARY_API_KEY=*****************
+CLOUDINARY_API_SECRET=*****************
 ```
