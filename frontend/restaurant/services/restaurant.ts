@@ -25,4 +25,30 @@ export const RestaurantService = {
   deleteMenuItem: async (id: string) => {
     await api.delete(`/restaurant/menu/${id}`);
   },
+  getAnalyticsDaily: async () => {
+    const response = await api.get('/restaurant/analytics/daily');
+    return response.data;
+  },
+  getAnalyticsWeekly: async () => {
+    const response = await api.get('/restaurant/analytics/weekly');
+    return response.data;
+  },
+  getEarnings: async () => {
+    const response = await api.get('/restaurant/earnings');
+    return response.data;
+  },
+  getPopularItems: async () => {
+    const response = await api.get('/restaurant/popular-items');
+    return response.data;
+  },
+  updateOperatingHours: async (hours: any) => {
+    const response = await api.put('/restaurant/operating-hours', hours);
+    return response.data;
+  },
+  uploadImage: async (formData: FormData) => {
+    const response = await api.post('/restaurant/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };

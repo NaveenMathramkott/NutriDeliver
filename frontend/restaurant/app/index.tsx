@@ -13,7 +13,6 @@ export default function Index() {
     );
   }
 
-  console.log('isAuthenticated----------------', JSON.stringify(isAuthenticated, null, 2));
 
   if (isAuthenticated) {
     return <Redirect href="/(restaurant)/(tabs)/dashboard" />;
