@@ -28,10 +28,10 @@ router.use(authorize('restaurant', 'admin'));
 
 router.get('/my/restaurant', getMyRestaurant);
 router.post('/', validate(validateRestaurant), createRestaurant);
-router.put('/my/restaurant', validate(validateRestaurant), updateRestaurant);
-router.get('/my/restaurant/orders', getRestaurantOrders);
-router.put('/my/restaurant/orders/:orderId/status', updateOrderStatus);
-router.get('/my/restaurant/analytics', getRestaurantAnalytics);
-router.post('/my/restaurant/images', uploadMultiple('images', 5), handleUploadError, uploadRestaurantImages);
+router.put('/restaurant', validate(validateRestaurant), updateRestaurant);
+router.get('/restaurant/orders', getRestaurantOrders);
+router.put('/restaurant/orders/:orderId/status', updateOrderStatus);
+router.get('/restaurant/analytics', getRestaurantAnalytics);
+router.post('/restaurant/images', uploadMultiple('images', 5), handleUploadError, uploadRestaurantImages);
 
 export default router;

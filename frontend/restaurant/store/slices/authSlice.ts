@@ -9,6 +9,7 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  isInitialized: false,
 };
 
 export const login = createAsyncThunk(
@@ -16,11 +17,20 @@ export const login = createAsyncThunk(
   async (credentials: any, { rejectWithValue }) => {
     try {
       const response = await AuthService.login(credentials);
-      await Storage.setItem('token', response.token);
-      await Storage.setItem('user', response.user);
-      return response;
+      // The response is now expected to be { success: boolean, data: { user, token, ... } }
+      
+      const { user, token } = response.data;
+      if (!token) {
+        throw new Error('No token received from server');
+      }
+
+      await Storage.setItem('token', token);
+      await Storage.setItem('user', user);
+      
+      return { user, token};
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      const message = error.response?.data?.message || error.message || 'Login failed';
+      return rejectWithValue(message);
     }
   }
 );
@@ -39,6 +49,10 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.isAuthenticated = true;
+      state.isLoading = false;
+    },
+    setInitialized: (state, action: PayloadAction<boolean>) => {
+      state.isInitialized = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -65,5 +79,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials } = authSlice.actions;
+export const { setCredentials, setInitialized } = authSlice.actions;
 export default authSlice.reducer;
