@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { createNotification } from './notificationController.js';
+import { generateToken } from '../utils/generateToken.js';
 
 // @desc    Register as rider
 // @route   POST /api/riders/register
@@ -49,14 +50,15 @@ export const registerRider = asyncHandler(async (req, res) => {
     }
   });
 
-  // Generate token (you might want to use your auth system)
-  const token = user.generateAuthToken();
+  // Generate token
+  const token = generateToken({ id: user._id });
 
   res.status(201).json({
     success: true,
     message: 'Rider registration submitted for verification',
     data: {
       user,
+      role: user.role,
       token
     }
   });

@@ -5,3 +5,4 @@ export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenti
 export const selectAuthLoading = (state: RootState) => state.auth.isLoading;
 export const selectAuthError = (state: RootState) => state.auth.error;
 export const selectIsInitialized = (state: RootState) => state.auth.isInitialized;
+export const selectHasRestaurant = (state: RootState) => state.auth.hasRestaurant;

@@ -7,6 +7,9 @@ import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/Colors';
 import { globalStyles } from '@/styles/global';
 import { RestaurantService } from '@/services/restaurant';
+import { useDispatch } from 'react-redux';
+import { setRestaurantExists } from '@/store/slices/authSlice';
+import { Storage } from '@/utils/storage';
 
 export default function SetupScreen() {
   const [name, setName] = useState('');
@@ -15,6 +18,7 @@ export default function SetupScreen() {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation<any>();
+  const dispatch = useDispatch();
 
   const handleSave = async () => {
     if (!name || !address || !cuisine) {
@@ -29,9 +33,10 @@ export default function SetupScreen() {
         address,
         cuisine: cuisine.split(',').map(c => c.trim()),
       });
-      // Authentication will likely be handles by high level RootNavigator
-      // but if we need a direct jump:
-      // navigation.replace('Main');
+      
+      await Storage.setItem('hasRestaurant', true);
+      dispatch(setRestaurantExists(true));
+      // No need for navigation.replace('Main') as RootNavigator will handle it
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to save configuration');
     } finally {

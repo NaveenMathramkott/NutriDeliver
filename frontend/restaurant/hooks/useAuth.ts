@@ -5,7 +5,8 @@ import {
   selectIsAuthenticated, 
   selectAuthLoading, 
   selectAuthError, 
-  selectIsInitialized 
+  selectIsInitialized,
+  selectHasRestaurant 
 } from '../store/selectors/authSelectors';
 import { login, logout, setCredentials, setInitialized } from '../store/slices/authSlice';
 import { Storage } from '../utils/storage';
@@ -18,6 +19,7 @@ export const useAuth = () => {
   const isLoading = useSelector(selectAuthLoading);
   const error = useSelector(selectAuthError);
   const isInitialized = useSelector(selectIsInitialized);
+  const hasRestaurant = useSelector(selectHasRestaurant);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -26,9 +28,10 @@ export const useAuth = () => {
       try {
         const token = await Storage.getItem('token');
         const savedUser = await Storage.getItem('user');
+        const hasRestaurant = await Storage.getItem('hasRestaurant');
         
         if (token && savedUser) {
-          dispatch(setCredentials({ user: savedUser, token }));
+          dispatch(setCredentials({ user: savedUser, token, hasRestaurant: !!hasRestaurant }));
         }
       } catch (err) {
         console.error('Failed to load user from storage', err);
@@ -45,6 +48,7 @@ export const useAuth = () => {
     isAuthenticated,
     isLoading,
     isInitialized,
+    hasRestaurant,
     error,
     login: (credentials: any) => dispatch(login(credentials)),
     logout: () => dispatch(logout()),

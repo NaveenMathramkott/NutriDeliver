@@ -68,6 +68,7 @@ export const register = asyncHandler(async (req, res) => {
   message: 'User registered successfully. Please check your email for verification OTP.',
   data: {
    user,
+   role: user.role,
    token,
    refreshToken
   }
@@ -78,7 +79,7 @@ export const register = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 export const login = asyncHandler(async (req, res) => {
- const { email, password } = req.body;
+ const { email, password, role } = req.body;
 
 
  // Check if email and password are provided
@@ -98,6 +99,14 @@ export const login = asyncHandler(async (req, res) => {
   });
  }
 
+ // If role is provided, verify it matches the user's role
+ if (role && user.role !== role) {
+   return res.status(401).json({
+     success: false,
+     message: `Unauthorized. This account is registered as a ${user.role}.`
+   });
+ }
+ 
  // Check if user is active
  if (!user.isActive) {
   return res.status(401).json({
@@ -119,6 +128,7 @@ export const login = asyncHandler(async (req, res) => {
   message: 'Login successful',
   data: {
    user,
+   role: user.role,
    token,
    refreshToken
   }

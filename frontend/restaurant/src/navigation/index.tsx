@@ -6,13 +6,14 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { AuthNavigator } from './AuthNavigator';
 import { MainNavigator } from './MainNavigator';
+import SetupScreen from '../screens/auth/SetupScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { RootState } from '@/store';
 
 const Stack = createNativeStackNavigator();
 
 export const RootNavigator = () => {
-  const { isAuthenticated, isInitialized, isLoading } = useAuth();
+  const { isAuthenticated, isInitialized, isLoading, hasRestaurant } = useAuth();
 
   if (!isInitialized || isLoading) {
     return (
@@ -25,10 +26,12 @@ export const RootNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        ) : (
+        {!isAuthenticated ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
+        ) : !hasRestaurant ? (
+          <Stack.Screen name="Setup" component={SetupScreen} />
+        ) : (
+          <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>
