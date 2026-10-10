@@ -103,7 +103,7 @@ const orderSchema = new mongoose.Schema(
         "pending",
         "confirmed",
         "preparing",
-        "ready",
+        "ready_for_pickup",
         "pickedup",
         "out_for_delivery",
         "delivered",
@@ -236,5 +236,44 @@ orderSchema.pre("save", async function (next) {
   }
   next();
 });
+
+// Valid status transitions
+const validStatusTransitions = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
+  preparing: ['ready_for_pickup', 'cancelled'],
+  ready_for_pickup: ['pickedup', 'cancelled'],
+  pickedup: ['out_for_delivery', 'cancelled'],
+  out_for_delivery: ['delivered', 'cancelled'],
+  delivered: [],
+  cancelled: []
+};
+
+// Method to validate status transition
+orderSchema.methods.canTransitionTo = function(newStatus) {
+  const allowedTransitions = validStatusTransitions[this.status] || [];
+  return allowedTransitions.includes(newStatus);
+};
+
+// Static method for auto-cancelling unassigned orders
+orderSchema.statics.autoCancelUnassignedOrders = async function(timeoutMinutes = 10) {
+  const cutoffTime = new Date(Date.now() - timeoutMinutes * 60 * 1000);
+  
+  const orders = await this.find({
+    status: 'ready_for_pickup',
+    'deliveryDetails.riderId': { $exists: false },
+    createdAt: { $lt: cutoffTime }
+  });
+
+  const cancelledOrders = [];
+  for (const order of orders) {
+    order.status = 'cancelled';
+    order.specialInstructions = `${order.specialInstructions || ''}\n\nAuto-cancelled: No rider accepted within ${timeoutMinutes} minutes`.trim();
+    await order.save();
+    cancelledOrders.push(order);
+  }
+
+  return cancelledOrders;
+};
 
 export default mongoose.model("Order", orderSchema);

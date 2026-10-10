@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit from "express-rate-limit";
 
 // General rate limiter
 export const generalLimiter = rateLimit({
@@ -6,10 +6,10 @@ export const generalLimiter = rateLimit({
   max: 1000, // limit each IP to 1000 requests per windowMs
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again later.'
+    message: "Too many requests from this IP, please try again later.",
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Strict rate limiter for auth endpoints
@@ -18,10 +18,10 @@ export const authLimiter = rateLimit({
   max: 50, // limit each IP to 5 requests per windowMs
   message: {
     success: false,
-    message: 'Too many authentication attempts, please try again later.'
+    message: "Too many authentication attempts, please try again later.",
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Payment endpoint rate limiter
@@ -30,10 +30,10 @@ export const paymentLimiter = rateLimit({
   max: 10, // limit each IP to 10 requests per windowMs
   message: {
     success: false,
-    message: 'Too many payment attempts, please try again later.'
+    message: "Too many payment attempts, please try again later.",
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // API key based rate limiting for restaurants/riders
@@ -46,9 +46,9 @@ export const createUserSpecificLimiter = (maxRequests = 100) => {
     },
     message: {
       success: false,
-      message: 'Too many requests, please try again later.'
+      message: "Too many requests, please try again later.",
     },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
   });
 };

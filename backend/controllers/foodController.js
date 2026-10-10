@@ -21,7 +21,11 @@ export const getAllFoodItems = asyncHandler(async (req, res) => {
     sortOrder = 'desc'
   } = req.query;
 
-  const query = { isAvailable: true };
+  // Get open restaurant IDs
+  const openRestaurants = await Restaurant.find({ isActive: true, isVerified: true, isOpen: true }).select('_id');
+  const openRestaurantIds = openRestaurants.map(r => r._id);
+
+  const query = { isAvailable: true, restaurantId: { $in: openRestaurantIds } };
   
   if (category) query.categoryId = category;
   if (restaurant) query.restaurantId = restaurant;
@@ -46,7 +50,7 @@ export const getAllFoodItems = asyncHandler(async (req, res) => {
   sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
   const foodItems = await FoodItem.find(query)
-    .populate('restaurantId', 'name rating images')
+    .populate('restaurantId', 'name rating images isOpen')
     .populate('categoryId', 'name')
     .sort(sortOptions)
     .limit(limit * 1)
@@ -110,6 +114,15 @@ export const getFoodItemById = asyncHandler(async (req, res) => {
 export const getRestaurantFoodItems = asyncHandler(async (req, res) => {
   const { category } = req.query;
 
+  // Check if restaurant is open
+  const restaurant = await Restaurant.findById(req.params.restaurantId);
+  if (!restaurant || !restaurant.isActive || !restaurant.isVerified || !restaurant.isOpen) {
+    return res.status(400).json({
+      success: false,
+      message: 'Restaurant is not available for orders'
+    });
+  }
+
   const query = { 
     restaurantId: req.params.restaurantId,
     isAvailable: true 
@@ -142,8 +155,13 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
     });
   }
 
+  // Get open restaurant IDs
+  const openRestaurants = await Restaurant.find({ isActive: true, isVerified: true, isOpen: true }).select('_id');
+  const openRestaurantIds = openRestaurants.map(r => r._id);
+
   const query = {
     isAvailable: true,
+    restaurantId: { $in: openRestaurantIds },
     $or: [
       { name: { $regex: q, $options: 'i' } },
       { description: { $regex: q, $options: 'i' } },
@@ -156,7 +174,7 @@ export const searchFoodItems = asyncHandler(async (req, res) => {
   if (dietary) query.dietaryTags = dietary;
 
   const foodItems = await FoodItem.find(query)
-    .populate('restaurantId', 'name rating images')
+    .populate('restaurantId', 'name rating images isOpen')
     .populate('categoryId', 'name')
     .limit(20);
 

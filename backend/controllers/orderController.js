@@ -34,9 +34,57 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
   }
 
+  // Check if restaurant is open and verified
+  const restaurant = cart.restaurantId;
+  if (!restaurant.isActive || !restaurant.isVerified) {
+    return res.status(400).json({
+      success: false,
+      message: 'Restaurant is not available for orders'
+    });
+  }
+
+  if (!restaurant.isOpen) {
+    return res.status(400).json({
+      success: false,
+      message: 'Restaurant is currently closed'
+    });
+  }
+
+  // Validate minimum order amount
+  const minOrderAmount = restaurant.deliverySettings?.minOrderAmount || 15;
+  if (cart.totalAmount < minOrderAmount) {
+    return res.status(400).json({
+      success: false,
+      message: `Minimum order amount is $${minOrderAmount}`
+    });
+  }
+
+  // Check delivery distance if coordinates provided
+  if (deliveryAddress.coordinates?.lat && deliveryAddress.coordinates?.lng) {
+    const restaurantLat = restaurant.contact.address.coordinates.lat;
+    const restaurantLng = restaurant.contact.address.coordinates.lng;
+    const deliveryRadius = restaurant.deliverySettings?.deliveryRadius || 10;
+
+    const R = 6371;
+    const dLat = (deliveryAddress.coordinates.lat - restaurantLat) * Math.PI / 180;
+    const dLng = (deliveryAddress.coordinates.lng - restaurantLng) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(restaurantLat * Math.PI / 180) * Math.cos(deliveryAddress.coordinates.lat * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+
+    if (distance > deliveryRadius) {
+      return res.status(400).json({
+        success: false,
+        message: `Delivery address is outside the restaurant's delivery radius (${deliveryRadius}km)`
+      });
+    }
+  }
+
   // Calculate totals
   const orderTotal = cart.totalAmount;
-  const deliveryFee = cart.restaurantId.deliverySettings?.deliveryFee || 2.99;
+  const deliveryFee = restaurant.deliverySettings?.deliveryFee || 2.99;
   const tax = (orderTotal * 0.1); // 10% tax
   const grandTotal = orderTotal + deliveryFee + tax - (cart.appliedOffer?.discountAmount || 0);
 
@@ -59,7 +107,7 @@ export const createOrder = asyncHandler(async (req, res) => {
     paymentMethod,
     specialInstructions,
     appliedOffer: cart.appliedOffer,
-    estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes from now
+    estimatedDelivery: new Date(Date.now() + (restaurant.deliverySettings?.estimatedDeliveryTime || 30) * 60 * 1000)
   });
 
   // Clear cart
@@ -314,14 +362,10 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  const order = await Order.findOneAndUpdate(
-    { 
-      _id: orderId, 
-      restaurantId: restaurant._id 
-    },
-    { status },
-    { new: true }
-  );
+  const order = await Order.findOne({
+    _id: orderId,
+    restaurantId: restaurant._id
+  });
 
   if (!order) {
     return res.status(404).json({
@@ -329,6 +373,25 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
       message: 'Order not found'
     });
   }
+
+  // Validate status transition
+  if (!order.canTransitionTo(status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid status transition from ${order.status} to ${status}`
+    });
+  }
+
+  order.status = status;
+
+  // Set timestamps based on status
+  if (status === 'ready_for_pickup') {
+    order.deliveryDetails.estimatedPickupTime = new Date();
+  } else if (status === 'preparing') {
+    order.preparationTime = restaurant.deliverySettings?.estimatedDeliveryTime || 20;
+  }
+
+  await order.save();
 
   res.json({
     success: true,
@@ -356,7 +419,7 @@ export const getAvailableOrders = asyncHandler(async (req, res) => {
   const availableOrders = await Order.aggregate([
     {
       $match: {
-        status: 'ready',
+        status: 'ready_for_pickup',
         'deliveryDetails.riderId': { $exists: false }
       }
     },
@@ -425,7 +488,7 @@ export const acceptOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOneAndUpdate(
     {
       _id: orderId,
-      status: 'ready',
+      status: 'ready_for_pickup',
       'deliveryDetails.riderId': { $exists: false }
     },
     {
@@ -454,6 +517,22 @@ export const acceptOrder = asyncHandler(async (req, res) => {
     data: {
       order
     }
+  });
+});
+
+// @desc    Reject order (Rider)
+// @route   POST /api/orders/:orderId/reject
+// @access  Private (Rider)
+export const rejectOrder = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+
+  // This allows riders to skip an order - the order remains available for other riders
+  // We just log the rejection, no status change needed
+  // In a more advanced implementation, you might track rider rejections to avoid re-offering
+  
+  res.json({
+    success: true,
+    message: 'Order rejected, available for other riders'
   });
 });
 
