@@ -91,85 +91,144 @@ backend/
 - **POST /logout**: Session termination
 - **POST /refresh-token**: JWT token refresh
 - **POST /forgot-password**: Password reset request
+- **POST /verify-reset-otp**: Verify OTP for password reset
 - **POST /reset-password**: Password reset confirmation
 - **POST /verify-email**: Email verification
+- **POST /resend-verification**: Resend email verification OTP
+- **GET /me**: Get current authenticated user profile
 
 #### User Routes (`/api/users`)
-- **GET/PUT /profile**: User profile management
-- **PUT /preferences**: Dietary preferences update
-- **GET/POST/PUT/DELETE /addresses**: Address management
-- **GET /orders**: Order history and details
+- **GET /profile**: Get user profile information
+- **PUT /profile**: Update user profile details
+- **PUT /preferences**: Update user dietary preferences
+- **PUT /notification-preferences**: Update notification preferences
+- **GET /addresses**: Get all saved addresses
+- **POST /addresses**: Add a new delivery address
+- **PUT /addresses/:addressId**: Update specific address
+- **DELETE /addresses/:addressId**: Delete specific address
+- **GET /orders**: Get user's order history
+- **GET /orders/:orderId**: Get specific order details
+- **POST /avatar**: Upload/update user avatar
 
 #### Restaurant Routes (`/api/restaurants`)
-- **GET /**: Public restaurant listing
-- **GET/PUT /my-restaurant**: Restaurant profile management
-- **POST /**: Restaurant registration
-- **GET /my-restaurant/orders**: Restaurant order management
-- **PUT /orders/:id/status**: Order status updates
-- **GET /my-restaurant/analytics**: Sales and performance analytics
+- **GET /**: Public restaurant listing (with filters)
+- **GET /:id**: Get restaurant by ID
+- **GET /:id/menu**: Get restaurant menu
+- **GET /restaurant**: Get own restaurant profile (restaurant owner)
+- **POST /**: Create new restaurant (restaurant owner)
+- **PUT /restaurant**: Update own restaurant (restaurant owner)
+- **GET /restaurant/orders**: Get restaurant's orders (restaurant owner)
+- **PUT /restaurant/orders/:orderId/status**: Update order status (restaurant owner)
+- **GET /restaurant/analytics**: Get restaurant analytics (restaurant owner)
+- **POST /restaurant/images**: Upload restaurant images (restaurant owner)
 
 #### Food Routes (`/api/food`)
-- **GET /**: Public food item listing
-- **GET /categories**: Food category listing
-- **GET /restaurant/:id**: Restaurant-specific menus
-- **POST/PUT/DELETE /**: Food item CRUD operations (Restaurant access)
-- **GET /search**: Food search functionality
+- **GET /**: Public food item listing (with filters, pagination)
+- **GET /categories**: Get all food categories
+- **GET /search**: Search food items
+- **GET /:id**: Get food item by ID
+- **GET /restaurant/:restaurantId**: Get food items for specific restaurant
+- **POST /**: Create new food item (restaurant owner)
+- **PUT /:id**: Update food item (restaurant owner)
+- **DELETE /:id**: Delete food item (restaurant owner)
+- **PATCH /:id/availability**: Toggle food item availability (restaurant owner)
+- **POST /:id/images**: Upload food item images (restaurant owner)
 
 #### Cart Routes (`/api/cart`)
 - **GET /**: Retrieve cart contents
 - **POST /add**: Add items to cart
-- **PUT /update/:id**: Modify cart items
-- **DELETE /remove/:id**: Remove cart items
+- **PUT /update/:itemId**: Modify cart item quantity
+- **DELETE /remove/:itemId**: Remove item from cart
 - **DELETE /clear**: Empty cart
+- **POST /apply-offer**: Apply offer/discount to cart
 
 #### Order Routes (`/api/orders`)
-- **POST /**: Create new orders
-- **GET /**: Order history retrieval
-- **GET /:id**: Specific order details
-- **PUT /:id/cancel**: Order cancellation
-- **POST /:id/rate**: Order rating and reviews
-- **GET /rider/available**: Available delivery orders for riders
-- **PUT /:id/accept**: Order acceptance by riders
-- **PUT /:id/update-location**: Real-time delivery tracking
+- **POST /**: Create new order (user)
+- **GET /**: Get user's orders (user)
+- **GET /:orderId**: Get order by ID (all roles)
+- **PUT /:orderId/cancel**: Cancel order (user)
+- **POST /:orderId/rate**: Rate completed order (user)
+- **GET /restaurant/orders**: Get restaurant's orders (restaurant)
+- **PUT /:orderId/status**: Update order status (restaurant)
+- **GET /rider/available**: Get available delivery orders (rider)
+- **GET /rider/my-orders**: Get rider's assigned orders (rider)
+- **POST /:orderId/accept**: Accept delivery order (rider)
+- **PUT /:orderId/location**: Update delivery location (rider)
+- **POST /:orderId/confirm-pickup**: Confirm order pickup (rider)
+- **POST /:orderId/confirm-delivery**: Confirm order delivery (rider)
 
 #### Payment Routes (`/api/payments`)
-- **POST /create-intent**: Payment intent creation
-- **POST /confirm**: Payment confirmation
-- **POST /refund**: Refund processing
+- **POST /create-intent**: Create payment intent (Stripe) (user)
+- **POST /confirm**: Confirm payment (user)
+- **GET /methods**: Get saved payment methods (user)
+- **POST /methods**: Add new payment method (user)
+- **DELETE /methods/:methodId**: Remove payment method (user)
+- **GET /history**: Get payment history (user)
+- **POST /refund**: Process refund (admin/restaurant)
 
 #### Offer Routes (`/api/offers`)
-- **GET /**: Active offers listing
-- **POST /validate**: Offer code validation
-- **POST/PUT/DELETE /**: Offer management (Admin access)
+- **GET /**: Get active offers (public, optional auth)
+- **GET /:id**: Get offer by ID
+- **POST /validate**: Validate offer code (user)
+- **GET /admin/all**: Get all offers including inactive (admin)
+- **POST /**: Create new offer (admin)
+- **PUT /:id**: Update offer (admin)
+- **DELETE /:id**: Delete offer (admin)
 
 #### Notification Routes (`/api/notifications`)
-- **GET /**: User notifications
+- **GET /**: Get user notifications
+- **GET /unread-count**: Get unread notification count
 - **PUT /:id/read**: Mark notification as read
 - **PUT /read-all**: Mark all notifications as read
+- **DELETE /:id**: Delete notification
+- **PUT /preferences**: Update notification preferences
 
 #### Rider Routes (`/api/riders`)
 - **POST /register**: Rider-specific registration
+- **GET /profile**: Get rider profile
+- **PUT /profile**: Update rider profile
+- **POST /documents**: Upload rider documents
 - **PUT /availability**: Update online/offline status
-- **PUT /location**: Real-time location updates
-- **GET /orders/available**: Nearby available orders
-- **POST /orders/:orderId/accept**: Order acceptance
-- **POST /orders/:orderId/reject**: Order rejection
-- **POST /orders/:orderId/confirm-pickup**: Restaurant pickup confirmation
-- **POST /orders/:orderId/confirm-delivery**: Customer delivery confirmation
-- **GET /orders/current**: Active delivery information
-- **GET /orders/history**: Delivery history
-- **GET /earnings**: Rider income analytics
-- **GET /earnings/:period**: Time-based earnings
-- **GET /stats**: Performance statistics
-- **GET /ratings**: Customer feedback and ratings
+- **PUT /location**: Update current location
+- **GET /orders/available**: Get available delivery orders
+- **POST /orders/:orderId/accept**: Accept delivery order
+- **POST /orders/:orderId/reject**: Reject delivery order
+- **GET /orders/current**: Get current active delivery
+- **GET /orders/history**: Get delivery history
+- **POST /orders/:orderId/confirm-pickup**: Confirm order pickup
+- **POST /orders/:orderId/confirm-delivery**: Confirm order delivery
+- **GET /earnings**: Get earnings (all time)
+- **GET /earnings/:period**: Get earnings for period
+- **GET /stats**: Get rider statistics
+- **GET /ratings**: Get rider ratings
 
 #### Admin Routes (`/api/admin`)
-- **GET /users**: User management
-- **GET /restaurants**: Restaurant management
-- **GET /orders**: Platform order oversight
-- **GET /analytics**: Business intelligence
-- **PUT /restaurants/:id/verify**: Restaurant verification
-- **PUT /users/:id/status**: User status management
+- **GET /users**: Get all users
+- **GET /users/:id**: Get user by ID
+- **PUT /users/:id/status**: Update user status
+- **DELETE /users/:id**: Delete user
+- **GET /restaurants**: Get all restaurants
+- **GET /restaurants/:id**: Get restaurant by ID
+- **PUT /restaurants/:id/verify**: Verify restaurant
+- **PUT /restaurants/:id/status**: Update restaurant status
+- **GET /riders**: Get all riders
+- **GET /riders/:id**: Get rider by ID
+- **PUT /riders/:id/verify**: Verify rider
+- **PUT /riders/:id/status**: Update rider status
+- **GET /orders**: Get all orders
+- **GET /orders/:id**: Get order by ID
+- **PUT /orders/:id**: Update order
+- **POST /categories**: Create category
+- **PUT /categories/:id**: Update category
+- **DELETE /categories/:id**: Delete category
+- **GET /analytics/platform**: Get platform analytics
+- **GET /analytics/sales**: Get sales analytics
+- **GET /analytics/users**: Get user analytics
+- **GET /settings**: Get system settings
+- **PUT /settings**: Update system settings
+
+#### Health Check
+- **GET /health**: Health check endpoint
 
 ## Security Implementation
 
@@ -185,8 +244,9 @@ backend/
 - XSS protection with helmet and data sanitization
 
 ### 3. Rate Limiting
-- 100 requests per 15 minutes per IP address
-- Enhanced limits for authentication endpoints
+- General API: 100 requests per 15 minutes per IP
+- Auth endpoints: 5 requests per 15 minutes
+- Payment endpoints: 30 requests per 15 minutes
 - Dynamic limiting based on user behavior
 
 ### 4. Security Headers
@@ -222,5 +282,3 @@ backend/
 - Performance metrics collection and analysis
 
 ## Free Libraries & Services
-
-
