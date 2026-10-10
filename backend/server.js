@@ -23,6 +23,13 @@ import notificationRoutes from "./routes/notifications.js";
 import riderRoutes from "./routes/riders.js";
 import adminRoutes from "./routes/admin.js";
 
+// Import background jobs
+import {
+  autoCancelUnassignedOrders,
+  updateRestaurantOpenStatus,
+  cleanupOldNotifications,
+} from "./utils/backgroundJobs.js";
+
 const app = express();
 connectDB();
 
@@ -84,10 +91,48 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🎯 Server running on port ${PORT} --**`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || "development"} --**`);
   console.log(`📚 API Documentation: http://localhost:${PORT}/api/health --**`);
 });
+
+// Background Jobs
+// Auto-cancel unassigned orders every 5 minutes
+setInterval(
+  () => {
+    autoCancelUnassignedOrders(10).catch((err) =>
+      console.error("Auto-cancel job error:", err),
+    );
+  },
+  5 * 60 * 1000,
+);
+
+// Update restaurant open status based on operating hours every 5 minutes
+setInterval(
+  () => {
+    updateRestaurantOpenStatus().catch((err) =>
+      console.error("Restaurant status job error:", err),
+    );
+  },
+  5 * 60 * 1000,
+);
+
+// Cleanup old notifications daily at midnight
+setInterval(
+  () => {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
+      cleanupOldNotifications().catch((err) =>
+        console.error("Cleanup notifications job error:", err),
+      );
+    }
+  },
+  60 * 60 * 1000,
+); // Check every hour
+
+console.log(
+  "🕐 <<-------------<<-----------------<<>>------------------->>-------------->>Background jobs scheduled",
+);
 
 export default app;

@@ -100,6 +100,10 @@ const restaurantSchema = new mongoose.Schema({
     routingNumber: String,
     accountHolderName: String
   },
+  isOpen: {
+    type: Boolean,
+    default: true
+  },
   deliverySettings: {
     deliveryFee: {
       type: Number,
@@ -130,6 +134,9 @@ restaurantSchema.index({ 'contact.address.coordinates': '2dsphere' });
 
 // Index for cuisine type filtering
 restaurantSchema.index({ cuisineType: 1 });
+
+// Index for open/closed status
+restaurantSchema.index({ isOpen: 1 });
 
 // Index for top-rated restaurants (descending)
 restaurantSchema.index({ rating: -1 });

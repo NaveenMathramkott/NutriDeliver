@@ -8,6 +8,7 @@
 5. [File Structure](#file-structure)
 6. [Security Implementation](#security-implementation)
 7. [Scalability Considerations](#scalability-considerations)
+8. [Business Logic & Workflows](#business-logic--workflows)
 
 ## System Overview
 
@@ -42,7 +43,7 @@ NutriDeliver is a comprehensive healthy food delivery platform with four distinc
 Includes base user information with role-based profiles for customers, restaurants, riders, and admins. Features email/password authentication, profile management, dietary preferences, address storage, and verification status.
 
 #### 2. Restaurant Schema
-Contains restaurant details including owner information, contact details, operating hours, location coordinates, ratings, and verification status. Supports multiple cuisine types and bank details for payouts.
+Contains restaurant details including owner information, contact details, operating hours, location coordinates, ratings, and verification status. Supports multiple cuisine types and bank details for payouts. **New fields**: `isOpen` (boolean), `deliverySettings` (deliveryFee, minOrderAmount, deliveryRadius, estimatedDeliveryTime).
 
 #### 3. Category Schema
 Manages food categories with names, descriptions, images, and activation status for organizing healthy food items.
@@ -51,7 +52,7 @@ Manages food categories with names, descriptions, images, and activation status 
 Stores comprehensive nutritional food information including calories, macronutrients, ingredients, dietary tags, pricing, images, and preparation time. Linked to restaurants and categories.
 
 #### 5. Order Schema
-Tracks complete order lifecycle from placement to delivery. Includes order items, pricing breakdown, delivery addresses, status tracking, payment information, and rider assignment details.
+Tracks complete order lifecycle from placement to delivery. Includes order items, pricing breakdown, delivery addresses, status tracking, payment information, and rider assignment details. **Status enum**: `pending` → `confirmed` → `preparing` → `ready_for_pickup` → `pickedup` → `out_for_delivery` → `delivered` / `cancelled`.
 
 #### 6. Cart Schema
 Manages user shopping carts with restaurant-specific items, quantities, pricing, and special instructions.
@@ -78,7 +79,7 @@ backend/
 ├── middleware/ (Auth, validation, upload, rate limiting)
 ├── models/ (Mongoose schemas)
 ├── routes/ (API route definitions)
-├── utils/ (Token generation, email, notifications, helpers)
+├── utils/ (Token generation, email, notifications, helpers, backgroundJobs)
 ├── validations/ (Joi validation schemas)
 └── server.js (Application entry point)
 ```
@@ -114,20 +115,24 @@ backend/
 - **GET /**: Public restaurant listing (with filters)
 - **GET /:id**: Get restaurant by ID
 - **GET /:id/menu**: Get restaurant menu
+- **GET /:id/status**: Get restaurant open status & operating hours
+- **POST /:id/check-delivery**: Check delivery availability & fee for address
 - **GET /restaurant**: Get own restaurant profile (restaurant owner)
 - **POST /**: Create new restaurant (restaurant owner)
 - **PUT /restaurant**: Update own restaurant (restaurant owner)
+- **PUT /restaurant/toggle-status**: Toggle open/closed status (restaurant owner)
 - **GET /restaurant/orders**: Get restaurant's orders (restaurant owner)
-- **PUT /restaurant/orders/:orderId/status**: Update order status (restaurant owner)
+- **POST /restaurant/orders/:orderId/respond**: Accept/reject new order (restaurant owner)
+- **PUT /restaurant/orders/:orderId/status**: Update order status with validation (restaurant owner)
 - **GET /restaurant/analytics**: Get restaurant analytics (restaurant owner)
 - **POST /restaurant/images**: Upload restaurant images (restaurant owner)
 
 #### Food Routes (`/api/food`)
-- **GET /**: Public food item listing (with filters, pagination)
+- **GET /**: Public food item listing (only open restaurants, with filters, pagination)
 - **GET /categories**: Get all food categories
-- **GET /search**: Search food items
+- **GET /search**: Search food items (only open restaurants)
 - **GET /:id**: Get food item by ID
-- **GET /restaurant/:restaurantId**: Get food items for specific restaurant
+- **GET /restaurant/:restaurantId**: Get food items for specific restaurant (validates open status)
 - **POST /**: Create new food item (restaurant owner)
 - **PUT /:id**: Update food item (restaurant owner)
 - **DELETE /:id**: Delete food item (restaurant owner)
@@ -143,16 +148,18 @@ backend/
 - **POST /apply-offer**: Apply offer/discount to cart
 
 #### Order Routes (`/api/orders`)
-- **POST /**: Create new order (user)
+- **POST /**: Create new order (user) - validates restaurant open, min order, delivery radius
 - **GET /**: Get user's orders (user)
 - **GET /:orderId**: Get order by ID (all roles)
-- **PUT /:orderId/cancel**: Cancel order (user)
+- **PUT /:orderId/cancel**: Cancel order (user) - only pending/confirmed
 - **POST /:orderId/rate**: Rate completed order (user)
 - **GET /restaurant/orders**: Get restaurant's orders (restaurant)
-- **PUT /:orderId/status**: Update order status (restaurant)
+- **PUT /:orderId/status**: Update order status with transition validation (restaurant)
+- **POST /restaurant/orders/:orderId/respond**: Accept/reject order (restaurant)
 - **GET /rider/available**: Get available delivery orders (rider)
 - **GET /rider/my-orders**: Get rider's assigned orders (rider)
 - **POST /:orderId/accept**: Accept delivery order (rider)
+- **POST /:orderId/reject**: Reject delivery order (rider)
 - **PUT /:orderId/location**: Update delivery location (rider)
 - **POST /:orderId/confirm-pickup**: Confirm order pickup (rider)
 - **POST /:orderId/confirm-delivery**: Confirm order delivery (rider)
@@ -280,5 +287,85 @@ backend/
 - Structured logging with Winston
 - Comprehensive error tracking and monitoring
 - Performance metrics collection and analysis
+
+## Business Logic & Workflows
+
+### Order Lifecycle Flow
+
+```
+1. CUSTOMER PLACES ORDER
+   ├── Validates: Restaurant open, min order amount, delivery radius
+   ├── Creates order with status: "pending"
+   ├── Clears customer cart
+   └── Notifies restaurant
+
+2. RESTAURANT RESPONDS
+   ├── GET /restaurant/orders (sees pending orders)
+   ├── POST /restaurant/orders/:orderId/respond { action: "accept" | "reject" }
+   │   ├── Accept: status → "confirmed", sets preparationTime & estimatedDelivery
+   │   └── Reject: status → "cancelled", adds rejection reason
+   └── Notifies customer
+
+3. RESTAURANT PREPARES
+   ├── PUT /:orderId/status { status: "preparing" }
+   ├── PUT /:orderId/status { status: "ready_for_pickup" }
+   └── Notifies nearby riders (via getAvailableOrders)
+
+4. RIDER ACCEPTS
+   ├── GET /rider/available (sees ready_for_pickup orders)
+   ├── POST /:orderId/accept → status: "pickedup", assigns rider
+   └── Updates rider status to "busy"
+
+5. DELIVERY
+   ├── PUT /:orderId/location (real-time tracking)
+   ├── POST /:orderId/confirm-pickup → status: "out_for_delivery"
+   ├── POST /:orderId/confirm-delivery → status: "delivered"
+   │   ├── Adds delivery proof (image, signature, notes)
+   │   ├── Updates rider earnings & stats
+   │   └── Updates rider status to "available"
+   └── Notifies customer
+
+6. COMPLETION
+   ├── Customer can rate order (POST /:orderId/rate)
+   ├── Restaurant rating updated
+   └── Order archived
+```
+
+### Auto-Cancel Workflow
+- **Background job** runs every 5 minutes
+- Finds orders with `status: "ready_for_pickup"` and no rider assigned for >10 minutes
+- Auto-cancels with reason: "No rider accepted within 10 minutes"
+- Notifies customer and restaurant
+
+### Restaurant Open Status
+- **Manual toggle**: PUT `/restaurant/toggle-status` (owner controlled)
+- **Auto-update**: Background job checks `operatingHours` every 5 minutes
+- **Public listings**: Only show open restaurants (`isOpen: true`)
+- **Food items**: Only show items from open restaurants
+
+### Delivery Validation
+- **Pre-order check**: POST `/restaurants/:id/check-delivery` with lat/lng
+- **Order creation**: Validates distance ≤ `deliveryRadius`
+- **Fee calculation**: Uses restaurant's `deliverySettings.deliveryFee`
+- **Minimum order**: Enforces `deliverySettings.minOrderAmount`
+
+### Status Transition Validation
+```javascript
+const validTransitions = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
+  preparing: ['ready_for_pickup', 'cancelled'],
+  ready_for_pickup: ['pickedup', 'cancelled'],
+  pickedup: ['out_for_delivery', 'cancelled'],
+  out_for_delivery: ['delivered', 'cancelled'],
+  delivered: [],
+  cancelled: []
+};
+```
+
+### Background Jobs (server.js)
+- **Auto-cancel unassigned orders**: Every 5 minutes (10 min timeout)
+- **Update restaurant open status**: Every 5 minutes (based on operatingHours)
+- **Cleanup old notifications**: Daily at midnight (30 days, read only)
 
 ## Free Libraries & Services

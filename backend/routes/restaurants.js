@@ -5,6 +5,7 @@ import { uploadMultiple, handleUploadError } from "../middleware/upload.js";
 import {
   getAllRestaurants,
   getRestaurantById,
+  getRestaurantStatus,
   getMyRestaurant,
   createRestaurant,
   updateRestaurant,
@@ -13,6 +14,9 @@ import {
   getRestaurantAnalytics,
   getRestaurantMenu,
   uploadRestaurantImages,
+  toggleRestaurantStatus,
+  respondToOrder,
+  checkDelivery
 } from "../controllers/restaurantController.js";
 
 const router = express.Router();
@@ -21,6 +25,7 @@ const router = express.Router();
 router.get("/", getAllRestaurants);
 router.get("/:id", getRestaurantById);
 router.get("/:id/menu", getRestaurantMenu);
+router.get("/:id/status", getRestaurantStatus);
 
 // Restaurant owner routes
 router.use(authenticate);
@@ -38,5 +43,10 @@ router.post(
   handleUploadError,
   uploadRestaurantImages,
 );
+router.put("/restaurant/toggle-status", toggleRestaurantStatus);
+router.post("/restaurant/orders/:orderId/respond", respondToOrder);
+
+// Public route for delivery check
+router.post("/:id/check-delivery", checkDelivery);
 
 export default router;

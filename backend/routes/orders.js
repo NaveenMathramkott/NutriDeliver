@@ -11,6 +11,7 @@ import {
   updateOrderStatus,
   getAvailableOrders,
   acceptOrder,
+  rejectOrder,
   updateDeliveryLocation,
   confirmPickup,
   confirmDelivery,
@@ -34,6 +35,7 @@ router.put('/:orderId/status', authenticate, authorize('restaurant'), updateOrde
 router.get('/rider/available', authenticate, authorize('rider'), getAvailableOrders);
 router.get('/rider/my-orders', authenticate, authorize('rider'), getRiderOrders);
 router.post('/:orderId/accept', authenticate, authorize('rider'), acceptOrder);
+router.post('/:orderId/reject', authenticate, authorize('rider'), rejectOrder);
 router.put('/:orderId/location', authenticate, authorize('rider'), updateDeliveryLocation);
 router.post('/:orderId/confirm-pickup', authenticate, authorize('rider'), confirmPickup);
 router.post('/:orderId/confirm-delivery', authenticate, authorize('rider'), confirmDelivery);
