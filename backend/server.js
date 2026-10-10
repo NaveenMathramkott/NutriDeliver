@@ -23,6 +23,9 @@ import notificationRoutes from "./routes/notifications.js";
 import riderRoutes from "./routes/riders.js";
 import adminRoutes from "./routes/admin.js";
 
+// Import Swagger
+import { swaggerSpec, swaggerUi } from "./config/swagger.js";
+
 // Import background jobs
 import {
   autoCancelUnassignedOrders,
@@ -69,6 +72,26 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/offers", offerRoutes);
 app.use("/api/notifications", notificationRoutes);
+
+// Swagger Documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'NutriDeliver API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+  }
+}));
+
+// Serve swagger spec as JSON
+app.get("/api-docs.json", (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
 
 // Health Check Route
 app.get("/api/health", (req, res) => {
