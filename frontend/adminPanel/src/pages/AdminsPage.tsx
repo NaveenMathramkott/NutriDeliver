@@ -64,11 +64,12 @@ export function AdminsPage() {
         role: roleFilter,
       });
       if (response.success && response.data) {
+        console.log(response.data, "admins response");
         const data = response.data as {
-          users: User[];
+          admins: User[];
           pagination: { current: number; pages: number; total: number };
         };
-        setAdmins(data.users.filter((u) => u.role === "admin"));
+        setAdmins(data.admins.filter((u) => u.role === "admin"));
         setTotalPages(data.pagination.pages);
         setTotal(data.pagination.total);
       }
