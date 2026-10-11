@@ -159,7 +159,7 @@ export function OrderDetailDialog({
           )}
 
           {order.appliedOffer && (
-            <div className="rounded-lg border border-fresh-200 bg-fresh-50 p-3 text-sm text-fresh-800">
+            <div className="rounded-lg border border-fresh-200 bg-fresh-50 p-3 text-sm text-fresh-800 dark:border-fresh-500/30 dark:bg-fresh-500/10 dark:text-fresh-200">
               <strong>Offer applied:</strong> {order.appliedOffer.code} — $
               {order.appliedOffer.discountAmount.toFixed(2)} off
             </div>

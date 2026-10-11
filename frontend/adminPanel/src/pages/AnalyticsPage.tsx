@@ -79,6 +79,11 @@ export function AnalyticsPage() {
     fetchAnalytics();
   };
 
+  const maxDailySales = Math.max(
+    ...(salesAnalytics?.salesOverTime?.map((d) => d.dailySales) ?? [0]),
+    0,
+  );
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -115,21 +120,21 @@ export function AnalyticsPage() {
             icon={<Users className="h-5 w-5" />}
             tone="bg-primary/10 text-primary"
             hint={`+${platformAnalytics.analytics.users.new} this month`}
-            hintTone="text-fresh-600"
+            hintTone="text-fresh-700 dark:text-fresh-400"
           />
           <StatCard
             label="Total Restaurants"
             value={platformAnalytics.analytics.restaurants.total.toLocaleString()}
             icon={<Store className="h-5 w-5" />}
-            tone="bg-fresh-100 text-fresh-600"
+            tone="bg-fresh-100 text-fresh-700 dark:bg-fresh-500/15 dark:text-fresh-400"
             hint={`${platformAnalytics.analytics.restaurants.active} active`}
-            hintTone="text-fresh-600"
+            hintTone="text-fresh-700 dark:text-fresh-400"
           />
           <StatCard
             label="Total Riders"
             value="N/A"
             icon={<Truck className="h-5 w-5" />}
-            tone="bg-nutrideliver-100 text-nutrideliver-600"
+            tone="bg-muted text-muted-foreground"
             hint="Data not available"
           />
           <StatCard
@@ -138,15 +143,15 @@ export function AnalyticsPage() {
             icon={<Package className="h-5 w-5" />}
             tone="bg-primary/10 text-primary"
             hint={`${platformAnalytics.analytics.orders.recent} recent`}
-            hintTone="text-fresh-600"
+            hintTone="text-fresh-700 dark:text-fresh-400"
           />
           <StatCard
             label="Total Revenue"
             value={`$${platformAnalytics.analytics.revenue.totalRevenue.toLocaleString()}`}
             icon={<DollarSign className="h-5 w-5" />}
-            tone="bg-fresh-100 text-fresh-600"
+            tone="bg-fresh-100 text-fresh-700 dark:bg-fresh-500/15 dark:text-fresh-400"
             hint={`$${platformAnalytics.analytics.revenue.recentRevenue.toLocaleString()} recent`}
-            hintTone="text-fresh-600"
+            hintTone="text-fresh-700 dark:text-fresh-400"
           />
           <StatCard
             label="Avg Order Value"
@@ -241,18 +246,25 @@ export function AnalyticsPage() {
               <CardTitle>Sales Over Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80 flex items-end justify-around p-4">
+              <div className="flex h-80 items-end justify-around gap-1.5 overflow-x-auto p-4">
                 {salesAnalytics?.salesOverTime?.map((day) => (
                   <div
                     key={day._id}
-                    className="flex flex-col items-center gap-2 w-full"
+                    className="flex w-full min-w-[28px] flex-col items-center gap-2"
                   >
                     <div
-                      className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
+                      className="w-full rounded-t bg-primary transition-all hover:bg-primary/80"
                       style={{
-                        height: `${salesAnalytics.salesOverTime.length > 0 ? (day.revenue / Math.max(...salesAnalytics.salesOverTime.map((d) => d.revenue))) * 100 : 0}%`,
+                        height: `${
+                          maxDailySales > 0
+                            ? Math.max(
+                                (day.dailySales / maxDailySales) * 100,
+                                2,
+                              )
+                            : 2
+                        }%`,
                       }}
-                      title={`$${day.revenue.toLocaleString()}`}
+                      title={`$${day.dailySales.toLocaleString()} · ${day.orderCount} orders`}
                     />
                     <span className="text-xs text-muted-foreground">
                       {day._id}
@@ -278,15 +290,15 @@ export function AnalyticsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">
-                        {r.restaurant?.name || "Unknown"}
+                        {r.restaurant?.name || "Deleted restaurant"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {r.orders.toLocaleString()} orders
+                        {r.orderCount.toLocaleString()} orders
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        ${r.revenue.toLocaleString()}
+                        ${r.totalSales.toLocaleString()}
                       </p>
                     </div>
                   </div>

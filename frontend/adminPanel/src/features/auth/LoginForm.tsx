@@ -86,11 +86,13 @@ export function LoginForm({
           </form>
         </CardContent>
 
-        <CardFooter className="justify-center">
-          <p className="text-center text-sm text-muted-foreground">
-            Demo credentials: admin@nutrideliver.com / admin123
-          </p>
-        </CardFooter>
+        {import.meta.env.DEV && (
+          <CardFooter className="justify-center">
+            <p className="text-center text-sm text-muted-foreground">
+              Demo credentials: admin@nutrideliver.com / admin123
+            </p>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

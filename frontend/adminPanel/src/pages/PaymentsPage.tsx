@@ -183,17 +183,17 @@ export function PaymentsPage() {
           label="Total Revenue"
           value={`$${sumByStatus("paid").toFixed(2)}`}
           icon={<DollarSign className="h-5 w-5" />}
-          tone="bg-fresh-100 text-fresh-600"
+          tone="bg-fresh-100 text-fresh-700 dark:bg-fresh-500/15 dark:text-fresh-400"
           hint="All time"
-          hintTone="text-fresh-600"
+          hintTone="text-fresh-700 dark:text-fresh-400"
         />
         <StatCard
           label="Pending Payments"
           value={`$${sumByStatus("pending").toFixed(2)}`}
           icon={<AlertCircle className="h-5 w-5" />}
-          tone="bg-nutrideliver-100 text-nutrideliver-600"
+          tone="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400"
           hint={`${payments.filter((p) => p.paymentStatus === "pending").length} pending`}
-          hintTone="text-nutrideliver-600"
+          hintTone="text-amber-700 dark:text-amber-400"
         />
         <StatCard
           label="Refunds"

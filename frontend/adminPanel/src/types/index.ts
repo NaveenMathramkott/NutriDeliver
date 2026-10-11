@@ -329,18 +329,21 @@ export interface PlatformAnalytics {
 }
 
 export interface SalesAnalytics {
-  salesOverTime: { _id: string; orders: number; revenue: number }[];
+  /** Daily buckets keyed by YYYY-MM-DD. */
+  salesOverTime: { _id: string; dailySales: number; orderCount: number }[];
   topRestaurants: {
     _id: string;
-    orders: number;
-    revenue: number;
-    restaurant: Restaurant;
+    totalSales: number;
+    orderCount: number;
+    /** Absent when the order's restaurant was deleted. */
+    restaurant?: Restaurant;
   }[];
   popularItems: {
     _id: string;
     totalQuantity: number;
     totalRevenue: number;
-    foodItem: FoodItem;
+    /** Absent when the ordered food item was deleted. */
+    foodItem?: FoodItem;
   }[];
 }
 

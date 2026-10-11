@@ -80,6 +80,7 @@ export const api = {
 
   // Notifications
   getNotifications: notificationsApi.getAll,
+  getUnreadNotificationCount: notificationsApi.getUnreadCount,
   markAsRead: notificationsApi.markAsRead,
   markAllAsRead: notificationsApi.markAllAsRead,
   deleteNotification: notificationsApi.delete,

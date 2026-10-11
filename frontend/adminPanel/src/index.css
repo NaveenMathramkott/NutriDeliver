@@ -25,18 +25,18 @@
   --radius-sm: calc(var(--radius) - 4px);
   --font-sans: Inter, system-ui, sans-serif;
 
-  /* NutriDeliver food delivery theme colors */
-  --color-nutrideliver-50: #fef7ee;
-  --color-nutrideliver-100: #fdedd6;
-  --color-nutrideliver-200: #fad7ad;
-  --color-nutrideliver-300: #f6b978;
-  --color-nutrideliver-400: #f19340;
-  --color-nutrideliver-500: #ed741a;
-  --color-nutrideliver-600: #de5d13;
-  --color-nutrideliver-700: #b74610;
-  --color-nutrideliver-800: #923813;
-  --color-nutrideliver-900: #753014;
-  --color-nutrideliver-950: #3f1407;
+  /* NutriDeliver brand ramp, generated from #A73D4D */
+  --color-nutrideliver-50: #faf4f5;
+  --color-nutrideliver-100: #f5e6e8;
+  --color-nutrideliver-200: #e9c8cd;
+  --color-nutrideliver-300: #dca8b0;
+  --color-nutrideliver-400: #ce838e;
+  --color-nutrideliver-500: #a73d4d;
+  --color-nutrideliver-600: #8e3441;
+  --color-nutrideliver-700: #752934;
+  --color-nutrideliver-800: #5f212a;
+  --color-nutrideliver-900: #4c1a22;
+  --color-nutrideliver-950: #351218;
 
   --color-fresh-50: #f0fdf4;
   --color-fresh-100: #dcfce7;
@@ -52,48 +52,51 @@
 
 @layer base {
   :root {
-    --background: 48 100% 98%;
-    --foreground: 25 25% 15%;
+    /* Warm neutral tinted with the brand hue */
+    --background: 340 40% 99%;
+    --foreground: 345 25% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 25 25% 15%;
+    --card-foreground: 345 25% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 25 25% 15%;
-    --primary: 24 95% 53%;
+    --popover-foreground: 345 25% 12%;
+    /* #A73D4D */
+    --primary: 351 46% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 45 25% 92%;
-    --secondary-foreground: 25 25% 15%;
-    --muted: 45 20% 94%;
-    --muted-foreground: 25 15% 45%;
-    --accent: 45 25% 92%;
-    --accent-foreground: 25 25% 15%;
-    --destructive: 0 84% 60%;
+    --secondary: 345 30% 94%;
+    --secondary-foreground: 345 25% 12%;
+    --muted: 345 25% 95%;
+    --muted-foreground: 345 12% 42%;
+    --accent: 345 35% 93%;
+    --accent-foreground: 345 30% 20%;
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 35 20% 88%;
-    --input: 35 20% 88%;
-    --ring: 24 95% 53%;
+    --border: 345 25% 89%;
+    --input: 345 25% 89%;
+    --ring: 351 46% 45%;
     --radius: 0.75rem;
   }
 
   .dark {
-    --background: 25 25% 8%;
-    --foreground: 45 20% 95%;
-    --card: 25 25% 10%;
-    --card-foreground: 45 20% 95%;
-    --popover: 25 25% 10%;
-    --popover-foreground: 45 20% 95%;
-    --primary: 24 95% 58%;
-    --primary-foreground: 25 25% 8%;
-    --secondary: 25 15% 18%;
-    --secondary-foreground: 45 20% 95%;
-    --muted: 25 15% 18%;
-    --muted-foreground: 45 10% 65%;
-    --accent: 25 15% 18%;
-    --accent-foreground: 45 20% 95%;
-    --destructive: 0 62% 30%;
+    --background: 345 20% 7%;
+    --foreground: 345 20% 96%;
+    --card: 345 18% 10%;
+    --card-foreground: 345 20% 96%;
+    --popover: 345 18% 10%;
+    --popover-foreground: 345 20% 96%;
+    /* Lightened brand tone so it stays legible on dark surfaces */
+    --primary: 351 60% 62%;
+    --primary-foreground: 345 30% 10%;
+    --secondary: 345 12% 18%;
+    --secondary-foreground: 345 20% 96%;
+    --muted: 345 12% 18%;
+    --muted-foreground: 345 10% 68%;
+    --accent: 345 14% 20%;
+    --accent-foreground: 345 20% 96%;
+    --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 100%;
-    --border: 25 15% 20%;
-    --input: 25 15% 20%;
-    --ring: 24 95% 58%;
+    --border: 345 12% 22%;
+    --input: 345 12% 22%;
+    --ring: 351 60% 62%;
   }
 }
 
