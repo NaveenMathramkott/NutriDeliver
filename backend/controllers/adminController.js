@@ -4,6 +4,7 @@ import Order from "../models/Order.js";
 import Category from "../models/Category.js";
 import Offer from "../models/Offer.js";
 import FoodItem from "../models/FoodItem.js";
+import Settings from "../models/Settings.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 
 // @desc    Get all users
@@ -1141,31 +1142,8 @@ export const getUserAnalytics = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/settings
 // @access  Private (Admin)
 export const getSystemSettings = asyncHandler(async (req, res) => {
-  // In a real implementation, you'd fetch from a settings collection
-  const settings = {
-    platform: {
-      name: "NutriDeliver",
-      description: "Healthy Food Delivery Platform",
-      contactEmail: "admin@nutrideliver.com",
-      supportPhone: "+1-555-0123",
-    },
-    delivery: {
-      baseFee: 2.99,
-      minOrderAmount: 15,
-      maxDeliveryDistance: 10,
-      estimatedDeliveryTime: 30,
-    },
-    payments: {
-      currency: "USD",
-      stripeEnabled: true,
-      cashOnDelivery: true,
-    },
-    notifications: {
-      emailNotifications: true,
-      pushNotifications: true,
-      smsNotifications: false,
-    },
-  };
+  let settings = await Settings.findOne({ key: "system" });
+  if (!settings) settings = await Settings.create({ key: "system" });
 
   res.json({
     success: true,
@@ -1179,8 +1157,42 @@ export const getSystemSettings = asyncHandler(async (req, res) => {
 // @route   PUT /api/admin/settings
 // @access  Private (Admin)
 export const updateSystemSettings = asyncHandler(async (req, res) => {
-  // In a real implementation, you'd save to a settings collection
-  const { settings } = req.body;
+  // Accept both { settings: {...} } and a flat body
+  const payload = req.body?.settings ?? req.body;
+
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return res.status(400).json({
+      success: false,
+      message: "Settings payload is required",
+    });
+  }
+
+  const allowedSections = [
+    "platform",
+    "delivery",
+    "payments",
+    "notifications",
+  ];
+  const updates = {};
+  for (const section of allowedSections) {
+    if (payload[section] && typeof payload[section] === "object") {
+      updates[section] = payload[section];
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: `No valid settings sections provided. Expected one of: ${allowedSections.join(", ")}`,
+    });
+  }
+
+  // Upsert so the first update works even if the doc was never created
+  const settings = await Settings.findOneAndUpdate(
+    { key: "system" },
+    { $set: updates },
+    { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+  );
 
   res.json({
     success: true,
