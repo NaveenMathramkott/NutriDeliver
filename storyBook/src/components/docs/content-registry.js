@@ -1,11 +1,4 @@
-/**
- * Maps a navigation slug to a lazy loader for the page body.
- *
- * Chapters are code-split on purpose. The landing page and any single chapter
- * only need the markup for what is on screen; eagerly importing all 34 would
- * ship the entire guide to every visitor. The search index opts back into the
- * full set on demand — see `lib/search-index.jsx`.
- */
+// code-split on purpose; search opts back in on demand via lib/search-index.jsx
 export const contentLoaders = {
   // Introduction
   overview: () => import("./pages/introduction").then((m) => m.Overview),
@@ -83,6 +76,16 @@ export const contentLoaders = {
     import("./pages/apps-and-ops").then((m) => m.AdminDashboard),
   "admin/verification": () =>
     import("./pages/operations").then((m) => m.AdminVerification),
+
+  // AI integration
+  "ai/integration": () =>
+    import("./pages/ai-core").then((m) => m.AiIntegration),
+  "ai/recommendations": () =>
+    import("./pages/ai-core").then((m) => m.AiRecommendations),
+  "ai/menu-enrichment": () =>
+    import("./pages/ai-menu").then((m) => m.AiMenuEnrichment),
+  "ai/forecasting": () => import("./pages/ai-ops").then((m) => m.AiForecasting),
+  "ai/support": () => import("./pages/ai-ops").then((m) => m.AiSupport),
 
   // Production
   "production/deployment": () =>

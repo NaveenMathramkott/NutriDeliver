@@ -2,10 +2,7 @@ import { Callout } from "../callout";
 import { CodeBlock } from "../code-block";
 import { Diagram, PropertyTable, Split, Step, Steps } from "../primitives";
 
-/**
- * The data-and-safety half of the backend: models, validation, errors,
- * middleware, and auth. Each chapter depends only on the ones before it.
- */
+// models, validation, errors, middleware and auth — each builds on the last.
 
 export function BackendModels() {
   return (

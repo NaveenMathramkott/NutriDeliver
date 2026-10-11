@@ -1,11 +1,6 @@
 import { Component } from "react";
 
-/**
- * Catches render errors from a single chapter and shows a recoverable message
- * instead of letting one malformed page blank the entire application.
- *
- * Keyed by route in DocPage, so navigating away resets the error state.
- */
+// keeps one malformed chapter from blanking the whole app
 export class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -17,7 +12,7 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    // A new route is a new chance to render cleanly.
+    // new route, new chance to render cleanly
     if (prevProps.resetKey !== this.props.resetKey && this.state.error) {
       this.setState({ error: null });
     }

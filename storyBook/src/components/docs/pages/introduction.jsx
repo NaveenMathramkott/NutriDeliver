@@ -11,13 +11,7 @@ import {
   Steps,
 } from "../primitives";
 
-/**
- * Page content, keyed by navigation slug.
- *
- * Each export is a React component. Keeping content out of the navigation
- * module means the nav tree stays a pure data structure that can be imported
- * by the search index without pulling in every page's code.
- */
+// chapter components, kept out of navigation.js so nav stays pure data.
 
 export function Overview() {
   return (
@@ -157,6 +151,18 @@ export function Overview() {
             A desktop web dashboard for operators. Faster to build than the
             mobile apps because it reuses familiar React patterns and has
             shadcn/ui doing the visual heavy lifting.
+          </p>
+        </Step>
+
+        <Step title="AI integration">
+          <p>
+            Five chapters on adding AI where it genuinely helps: nutrition-aware
+            recommendations, menu enrichment, ETA and demand forecasting, and a
+            grounded support agent. Each one states the case against using a
+            model, ships with a deterministic fallback, and has to beat a
+            measured baseline before it replaces one. Read{" "}
+            <a href="/docs/ai/integration">Where AI Belongs</a> before any of
+            them.
           </p>
         </Step>
 

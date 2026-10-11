@@ -1,10 +1,6 @@
 import { cn } from "../../lib/utils";
 
-/**
- * Numbered workflow steps. Each step is rendered as a connected rail, so a
- * multi-part build sequence reads as one continuous instruction rather than a
- * stack of disconnected code blocks.
- */
+// connected rail so a multi-step build reads as one instruction
 export function Steps({ children }) {
   const items = Array.isArray(children) ? children : [children];
   return (
@@ -30,9 +26,6 @@ export function Step({ title, children, className }) {
   );
 }
 
-/**
- * A grid of cards linking to other pages in the guide.
- */
 export function CardGrid({ children }) {
   return <div className="my-6 grid gap-3 sm:grid-cols-2">{children}</div>;
 }
@@ -60,7 +53,7 @@ export function Card({ href, title, description, icon: Icon }) {
   );
 }
 
-/** Key/value grid, useful for environment variables and status codes. */
+// key/value grid, mostly used for env vars and status codes
 export function PropertyTable({
   rows,
   headers = ["Name", "Type", "Description"],
@@ -109,7 +102,6 @@ export function PropertyTable({
   );
 }
 
-/** Renders an ASCII/flow diagram in a monospace block that scrolls. */
 export function Diagram({ children, caption }) {
   return (
     <figure className="my-6">
@@ -125,7 +117,6 @@ export function Diagram({ children, caption }) {
   );
 }
 
-/** Side-by-side comparison of two approaches. */
 export function Split({ left, right }) {
   return (
     <div className="my-6 grid gap-4 md:grid-cols-2">

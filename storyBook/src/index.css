@@ -2,12 +2,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
-  Design tokens follow the shadcn/ui convention: every colour is a set of
-  primitive scales exposed as semantic CSS variables. Components never
-  reference the raw scales — they reference the semantic layer, which is what
-  makes a single `.dark` class flip the entire theme.
-*/
+/* shadcn convention: components use the semantic layer, so one `.dark` class
+   on <html> re-themes everything */
 :root {
   --radius: 0.625rem;
 
@@ -35,11 +31,11 @@
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
 
-  /* Brand accent — NutriDeliver crimson #A73D4D, for links and highlights. */
+  /* brand accent — #A73D4D */
   --brand: oklch(0.5119 0.1395 14.5);
   --brand-foreground: oklch(0.985 0 0);
 
-  /* Surfaces used by code blocks and inset panels. */
+  /* code block and inset panel background */
   --surface: oklch(0.985 0 0);
   --surface-foreground: oklch(0.145 0 0);
 }
@@ -69,11 +65,7 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
 
-  /*
-    The brand is lightened for dark mode rather than reused as-is: #A73D4D
-    scores only 3.2:1 against the dark background, which fails WCAG AA for
-    text. Lightening preserves the hue and keeps it recognisably the same red.
-  */
+  /* lightened for dark mode: #A73D4D alone is only 3.2:1 on black */
   --brand: oklch(0.6119 0.1465 14.5);
   --brand-foreground: oklch(0.145 0 0);
 
@@ -158,7 +150,7 @@
     background-color: color-mix(in oklch, var(--brand) 30%, transparent);
   }
 
-  /* Visible, consistent focus ring for keyboard users only. */
+  /* keyboard focus ring only */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -191,10 +183,7 @@
 }
 
 @layer components {
-  /*
-    Syntax highlighting tokens. Kept as plain classes rather than utility names
-    so the highlighter can emit them directly as markup.
-  */
+  /* plain classes so the highlighter can emit them as raw markup */
   .tok-comment {
     color: color-mix(in oklch, var(--muted-foreground) 85%, transparent);
     font-style: italic;
@@ -237,7 +226,7 @@
     color: var(--foreground);
   }
 
-  /* Long-form documentation typography. */
+  /* docs body typography */
   .prose-docs {
     color: var(--foreground);
   }
@@ -346,15 +335,12 @@
     vertical-align: top;
   }
 
-  /*
-    Headings are given ids by JS so the right-hand TOC can link to them.
-    `scroll-margin` keeps the target clear of the sticky header on jump.
-  */
+  /* ids are assigned by JS; scroll-margin clears the sticky header */
   .prose-docs :is(h2, h3, h4)[id] {
     scroll-margin-top: 6rem;
   }
 
-  /* Anchor link revealed on heading hover, matching the shadcn docs pattern. */
+  /* heading anchor, revealed on hover */
   .heading-anchor {
     @apply ml-2 opacity-0 transition-opacity no-underline;
   }

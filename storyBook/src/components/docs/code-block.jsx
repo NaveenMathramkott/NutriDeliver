@@ -31,7 +31,7 @@ export function CodeBlock({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Clipboard access can be blocked; silently ignore rather than throw.
+      // clipboard can be blocked, ignore quietly
     }
   }, [code]);
 

@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { cn } from "../../lib/utils";
 
-/**
- * "On this page" rail.
- *
- * Scroll-spy via IntersectionObserver rather than a scroll handler: the
- * observer picks the topmost intersecting heading, which stays accurate during
- * fast scrolling where scroll-position maths lags behind.
- */
+// observer, not a scroll handler — scroll maths lags on fast scrolling
 export function Toc({ headings }) {
   const [activeId, setActiveId] = useState(headings[0]?.id ?? null);
 
@@ -26,7 +20,7 @@ export function Toc({ headings }) {
 
         if (visible[0]) setActiveId(visible[0].target.id);
       },
-      // Bias the root margin upwards so the heading under the sticky header wins.
+      // bias upwards so the heading under the sticky header wins
       { rootMargin: "-80px 0px -70% 0px", threshold: [0, 1] },
     );
 

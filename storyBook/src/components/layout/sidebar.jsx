@@ -7,9 +7,7 @@ import { cn } from "../../lib/utils";
 function SectionGroup({ section, pathname, onNavigate }) {
   const isActiveSection = section.pages.some((p) => pageHref(p) === pathname);
 
-  // Explicit user toggles win; anything the user has not touched falls back to
-  // "open if this section contains the active page". Deriving rather than
-  // syncing with an effect keeps the render pure and avoids a cascading update.
+  // user toggles win, the rest derives from the active page
   const [overrides, setOverrides] = useState({});
   const open = overrides[section.title] ?? isActiveSection;
 
@@ -64,11 +62,11 @@ function SectionGroup({ section, pathname, onNavigate }) {
   );
 }
 
-/** Left-hand navigation. Rendered inline on desktop, in a drawer on mobile. */
+// inline on desktop, in a drawer on mobile
 export function Sidebar({ pathname, onNavigate, className }) {
   const scrollRef = useRef(null);
 
-  // Bring the active link into view when navigating via prev/next or search.
+  // prev/next and search jump around without moving the scroll position
   useEffect(() => {
     const el = scrollRef.current?.querySelector('[aria-current="page"]');
     el?.scrollIntoView({ block: "nearest" });

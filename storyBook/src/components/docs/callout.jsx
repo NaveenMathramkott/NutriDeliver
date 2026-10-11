@@ -32,9 +32,7 @@ const VARIANTS = {
   },
 };
 
-/**
- * Callout boxes. Register extra variants by extending VARIANTS above.
- */
+// add a variant by extending VARIANTS above
 export function Callout({ variant = "note", title, children }) {
   const config = VARIANTS[variant] ?? VARIANTS.note;
   const Icon = config.icon;

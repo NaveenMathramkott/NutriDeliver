@@ -4,23 +4,7 @@ import { FALLBACK_VERSION, REPO } from "../../lib/repo";
 import { GitHubIcon } from "../icons";
 import { cn } from "../../lib/utils";
 
-/**
- * GitHub stars, forks and latest release tag.
- *
- * Two constraints shaped this component:
- *
- *  1. The version badge must only appear once an actual release exists, so the
- *     tag comes from the GitHub releases API rather than from package.json.
- *     Before the first release, this renders nothing.
- *
- *  2. It must never break the page. The fetch is unauthenticated and therefore
- *     rate-limited to 60 requests an hour per IP, and a docs site is often
- *     viewed offline. Every failure path degrades to hiding the affected badge
- *     rather than showing an error.
- *
- * The result is cached in sessionStorage: the badges are cosmetic, and
- * re-fetching on every page navigation would burn the rate limit for nothing.
- */
+// unauthenticated api, rate-limited — every failure path just hides a badge
 const CACHE_KEY = "nutridocs-github-meta";
 const CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -39,7 +23,7 @@ function writeCache(data) {
   try {
     sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
   } catch {
-    // Storage unavailable (private mode) — the badge simply refetches later.
+    // private mode blocks storage, we just refetch later
   }
 }
 
@@ -50,8 +34,7 @@ async function fetchMeta() {
     fetch(`https://api.github.com/repos/${REPO.owner}/${REPO.name}`, {
       headers,
     }),
-    // `per_page=1` plus the empty-array response means "no releases yet",
-    // which is exactly the state this is designed to handle.
+    // per_page=1 plus an empty array means "no releases yet", which we handle
     fetch(
       `https://api.github.com/repos/${REPO.owner}/${REPO.name}/releases?per_page=1`,
       {
@@ -68,7 +51,7 @@ async function fetchMeta() {
   return {
     stars: repo.stargazers_count ?? 0,
     forks: repo.forks_count ?? 0,
-    // No release → null → the badge is hidden, per the release-gating rule.
+    // no release -> null -> badge stays hidden
     version:
       Array.isArray(releases) && releases[0]?.tag_name
         ? releases[0].tag_name
@@ -98,13 +81,7 @@ const IconBadge = ({ href, icon: Icon, value, label, srLabel }) => {
   );
 };
 
-/**
- * Repo link plus live stars / forks / version.
- *
- * `showVersion` is left configurable so the badge can be suppressed entirely
- * without editing this component — useful if the star/fork counters are wanted
- * but the release feed is not.
- */
+// showVersion is toggleable so you can drop the release feed
 export function RepoBadges({ showVersion = true, className }) {
   const [meta, setMeta] = useState(readCache);
 
@@ -120,8 +97,7 @@ export function RepoBadges({ showVersion = true, className }) {
         setMeta(data);
       })
       .catch(() => {
-        // Offline, rate-limited, or the repo is private. Hide the counters.
-        // A docs header is not the place to report an API failure.
+        // offline or private repo — a header is no place for an API error
       });
 
     return () => {

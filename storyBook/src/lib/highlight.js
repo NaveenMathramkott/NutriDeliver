@@ -1,11 +1,4 @@
-/**
- * A small, dependency-free syntax highlighter.
- *
- * It is intentionally not a full parser. It tokenises with an ordered set of
- * regex rules (comments and strings first, keywords next, identifiers last) and
- * escapes the output before it reaches React, so code samples render correctly
- * without `dangerouslySetInnerHTML`.
- */
+// tiny regex tokenizer; rule order matters: comments, strings, then keywords
 
 const KEYWORDS = new Set([
   "const",
@@ -189,7 +182,7 @@ function tokenize(code, language) {
   return out.join("");
 }
 
-/** Returns highlighted HTML for a code sample. Safe to inject. */
+// html is escaped in tokenize(), so this is safe to inject as-is
 export function highlight(code, language) {
   return tokenize(String(code).replace(/\n$/, ""), language);
 }

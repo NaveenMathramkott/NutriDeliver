@@ -1,8 +1,8 @@
-import offersImage from "../../../assets/admin_dashboard_offers.png";
-import { Callout } from "../callout";
-import { CodeBlock } from "../code-block";
-import { Diagram, PropertyTable, Split, Step, Steps } from "../primitives";
-import { Screenshot } from "../screenshot";
+import offersImage from '../../../assets/admin_dashboard_offers.png'
+import { Callout } from '../callout'
+import { CodeBlock } from '../code-block'
+import { Diagram, PropertyTable, Split, Step, Steps } from '../primitives'
+import { Screenshot } from '../screenshot'
 
 export function BackendApiDesign() {
   return (
@@ -26,39 +26,39 @@ export function BackendApiDesign() {
       </p>
 
       <PropertyTable
-        headers={["Instead of", "NutriDeliver uses", "Why"]}
+        headers={['Instead of', 'NutriDeliver uses', 'Why']}
         rows={[
           [
-            "GET /getRestaurants",
-            "GET /api/restaurants",
-            "The method already says read. Repeating it makes the URL lie.",
+            'GET /getRestaurants',
+            'GET /api/restaurants',
+            'The method already says read. Repeating it makes the URL lie.',
           ],
           [
-            "POST /createOrder",
-            "POST /api/orders",
-            "POST to the collection means create. The action is the verb.",
+            'POST /createOrder',
+            'POST /api/orders',
+            'POST to the collection means create. The action is the verb.',
           ],
           [
-            "POST /deleteFoodItem",
-            "DELETE /api/food/:id",
-            "Delete is a method and a noun, not a string in the path.",
+            'POST /deleteFoodItem',
+            'DELETE /api/food/:id',
+            'Delete is a method and a noun, not a string in the path.',
           ],
           [
-            "PUT /updateOrderStatus",
-            "PUT /api/orders/:id/status",
-            "Status is a sub-resource of the order, addressable on its own.",
+            'PUT /updateOrderStatus',
+            'PUT /api/orders/:id/status',
+            'Status is a sub-resource of the order, addressable on its own.',
           ],
           [
-            "GET /api/orderListForUser",
-            "GET /api/orders",
-            "The caller is implied by the token, not by the path.",
+            'GET /api/orderListForUser',
+            'GET /api/orders',
+            'The caller is implied by the token, not by the path.',
           ],
         ]}
       />
 
       <p>
         Sub-resources are allowed when they are genuinely addressable and carry
-        their own lifecycle — <code>/orders/:id/status</code>,{" "}
+        their own lifecycle — <code>/orders/:id/status</code>,{' '}
         <code>/orders/:id/location</code>, <code>/cart/items</code>. They are
         not allowed as decoration. If a sub-resource could be a top-level
         resource with a different name, make it one.
@@ -70,7 +70,7 @@ export function BackendApiDesign() {
           here, because the caller is already known: it is in the verified
           token. Writing <code>my</code> into the path creates two URLs for one
           resource and hands every future maintainer a decision about which one
-          to canonicalise. The restaurant owner&rsquo;s endpoints are guarded by{" "}
+          to canonicalise. The restaurant owner&rsquo;s endpoints are guarded by{' '}
           <code>authorize('restaurant', 'admin')</code> and resolve ownership
           from <code>req.user.id</code>.
         </p>
@@ -107,27 +107,27 @@ export function BackendApiDesign() {
       />
 
       <PropertyTable
-        headers={["Key", "Type", "Rules"]}
+        headers={['Key', 'Type', 'Rules']}
         rows={[
           [
-            "success",
-            "boolean",
-            "Always present. Derived from the HTTP status, never set by hand.",
+            'success',
+            'boolean',
+            'Always present. Derived from the HTTP status, never set by hand.',
           ],
           [
-            "message",
-            "string",
-            "Human-readable, safe to show a user. No stack traces, no SQL, no ids of other users.",
+            'message',
+            'string',
+            'Human-readable, safe to show a user. No stack traces, no SQL, no ids of other users.',
           ],
           [
-            "data",
-            "object",
-            "The payload. Omitted or null on failure. List endpoints nest their own pagination key.",
+            'data',
+            'object',
+            'The payload. Omitted or null on failure. List endpoints nest their own pagination key.',
           ],
           [
-            "errors",
-            "array",
-            "Field-level detail from Joi, present only on validation failures.",
+            'errors',
+            'array',
+            'Field-level detail from Joi, present only on validation failures.',
           ],
         ]}
       />
@@ -152,52 +152,52 @@ export function BackendApiDesign() {
       </p>
 
       <PropertyTable
-        headers={["Code", "NutriDeliver uses it for", "Example"]}
+        headers={['Code', 'NutriDeliver uses it for', 'Example']}
         rows={[
           [
-            "200 OK",
-            "A successful read, update, or delete that returns a body",
-            "GET /api/orders, PUT /api/orders/:id/cancel",
+            '200 OK',
+            'A successful read, update, or delete that returns a body',
+            'GET /api/orders, PUT /api/orders/:id/cancel',
           ],
           [
-            "201 Created",
-            "A resource now exists that did not before",
-            "POST /api/restaurants, POST /api/orders",
+            '201 Created',
+            'A resource now exists that did not before',
+            'POST /api/restaurants, POST /api/orders',
           ],
           [
-            "400 Bad Request",
-            "The request is understood but violates a business rule",
-            "Restaurant closed, minimum order not met",
+            '400 Bad Request',
+            'The request is understood but violates a business rule',
+            'Restaurant closed, minimum order not met',
           ],
           [
-            "401 Unauthorized",
-            "No token, or a token that failed verification",
-            "Missing or expired access token",
+            '401 Unauthorized',
+            'No token, or a token that failed verification',
+            'Missing or expired access token',
           ],
           [
-            "403 Forbidden",
-            "A valid token for the wrong role, or someone else’s resource",
-            "Customer trying to read another customer’s order",
+            '403 Forbidden',
+            'A valid token for the wrong role, or someone else’s resource',
+            'Customer trying to read another customer’s order',
           ],
           [
-            "404 Not Found",
-            "The resource does not exist, or you are not allowed to know that it does",
-            "Order id that belongs to someone else",
+            '404 Not Found',
+            'The resource does not exist, or you are not allowed to know that it does',
+            'Order id that belongs to someone else',
           ],
           [
-            "409 Conflict",
-            "The request collides with existing state",
-            "Duplicate email on register, duplicate offer code",
+            '409 Conflict',
+            'The request collides with existing state',
+            'Duplicate email on register, duplicate offer code',
           ],
           [
-            "422 Unprocessable",
-            "Syntactically valid, semantically impossible after validation",
-            "Joi rejected the payload",
+            '422 Unprocessable',
+            'Syntactically valid, semantically impossible after validation',
+            'Joi rejected the payload',
           ],
           [
-            "500 Internal",
-            "An unhandled fault — the only code you never write deliberately",
-            "Database unreachable",
+            '500 Internal',
+            'An unhandled fault — the only code you never write deliberately',
+            'Database unreachable',
           ],
         ]}
       />
@@ -309,7 +309,7 @@ export function BackendApiDesign() {
 
       <Split
         left={{
-          title: "Offset pagination",
+          title: 'Offset pagination',
           children: (
             <ul>
               <li>Supports random access: page 7 of 12 just works.</li>
@@ -328,7 +328,7 @@ export function BackendApiDesign() {
           ),
         }}
         right={{
-          title: "Cursor pagination",
+          title: 'Cursor pagination',
           children: (
             <ul>
               <li>
@@ -361,7 +361,7 @@ export function BackendApiDesign() {
       <h3>Filtering and sorting</h3>
 
       <p>
-        Filters are query parameters with explicit names, not a generic{" "}
+        Filters are query parameters with explicit names, not a generic{' '}
         <code>where</code> or <code>filter</code> blob. A generic filter
         language is a query injection surface with a friendly name. Explicit
         parameters are validated by Joi before they reach MongoDB, and each one
@@ -452,8 +452,8 @@ app.use('/api/v1/payments', paymentRoutes)
         <Step title="Run both versions side by side">
           <p>
             Mount v1 and v2 simultaneously, share the controllers, and thin the
-            old version with a deprecation header:{" "}
-            <code>Deprecation: true</code> and{" "}
+            old version with a deprecation header:{' '}
+            <code>Deprecation: true</code> and{' '}
             <code>Sunset: Sat, 30 Nov 2026 00:00:00 GMT</code>. Mobile clients
             cannot all be forced to update on the same day.
           </p>
@@ -464,7 +464,7 @@ app.use('/api/v1/payments', paymentRoutes)
 
       <p>
         Eleven route modules, four roles, and roughly a hundred endpoints. The
-        organising principle is simple:{" "}
+        organising principle is simple:{' '}
         <strong>
           one router per domain, mounted once, with public routes declared
           before the authentication gate
@@ -510,7 +510,7 @@ export default router`}
           <code>router.use(authenticate)</code> is a line, not a prefix — it
           applies to every handler registered after it. Put the public routes
           above it and the guarded routes below, and the file reads as a
-          permissions table. Reverse that order and a single forgotten{" "}
+          permissions table. Reverse that order and a single forgotten{' '}
           <code>authenticate</code> in the chain exposes a private endpoint.
         </p>
       </Callout>
@@ -518,7 +518,7 @@ export default router`}
       <h2>Documenting it</h2>
 
       <p>
-        NutriDeliver generates its OpenAPI spec from JSDoc comments with{" "}
+        NutriDeliver generates its OpenAPI spec from JSDoc comments with{' '}
         <a href="/docs/backend/docs">swagger-jsdoc</a>. The annotations live
         directly above the route they describe, which means the documentation
         and the routing table are edited together and cannot drift apart.
@@ -622,8 +622,8 @@ export const createOrder = asyncHandler(async (req, res) => { /* … */ })`}
         <p>
           <code>/api-docs.json</code> is served from the same process that
           serves the API, so the documentation is always exactly as current as
-          the code in that deploy. It also means{" "}
-          <a href="/docs/backend/testing">integration tests</a> can assert on{" "}
+          the code in that deploy. It also means{' '}
+          <a href="/docs/backend/testing">integration tests</a> can assert on{' '}
           <code>swaggerSpec.paths</code> — a route that exists but was never
           documented fails the suite.
         </p>
@@ -632,47 +632,47 @@ export const createOrder = asyncHandler(async (req, res) => { /* … */ })`}
       <h2>What to check before shipping an endpoint</h2>
 
       <PropertyTable
-        headers={["Check", "Why it matters"]}
+        headers={['Check', 'Why it matters']}
         rows={[
           [
-            "Auth guard present and role correct",
-            "The single most common source of a data breach.",
+            'Auth guard present and role correct',
+            'The single most common source of a data breach.',
           ],
           [
-            "Joi schema validates the body and query",
-            "Stops malformed input at the boundary, before any database work.",
+            'Joi schema validates the body and query',
+            'Stops malformed input at the boundary, before any database work.',
           ],
           [
-            "Status code matches the table above",
-            "Clients branch on this; 200-for-everything is unmaintainable.",
+            'Status code matches the table above',
+            'Clients branch on this; 200-for-everything is unmaintainable.',
           ],
           [
-            "Response uses the envelope",
-            "Otherwise the client needs a special case for this endpoint.",
+            'Response uses the envelope',
+            'Otherwise the client needs a special case for this endpoint.',
           ],
           [
-            "Query scoped to the caller",
-            "Ownership is part of the query, never a post-fetch check.",
+            'Query scoped to the caller',
+            'Ownership is part of the query, never a post-fetch check.',
           ],
           [
-            "Pagination on every list endpoint",
-            "An unbounded list is a denial-of-service vector.",
+            'Pagination on every list endpoint',
+            'An unbounded list is a denial-of-service vector.',
           ],
           [
-            "@swagger block present",
-            "Undocumented endpoints are the ones nobody maintains.",
+            '@swagger block present',
+            'Undocumented endpoints are the ones nobody maintains.',
           ],
         ]}
       />
 
       <p>
-        Next:{" "}
+        Next:{' '}
         <a href="/docs/backend/restaurant-apis">Restaurant &amp; Food APIs</a> —
         the public catalogue, where these conventions meet a real problem:
         finding restaurants near someone, fast.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendRestaurantApis() {
@@ -690,52 +690,52 @@ export function BackendRestaurantApis() {
       <h2>The surface</h2>
 
       <PropertyTable
-        headers={["Endpoint", "Access", "What it does"]}
+        headers={['Endpoint', 'Access', 'What it does']}
         rows={[
           [
-            "GET /api/restaurants",
-            "Public",
-            "Paginated listing with cuisine, rating, price, open, and dietary filters.",
+            'GET /api/restaurants',
+            'Public',
+            'Paginated listing with cuisine, rating, price, open, and dietary filters.',
           ],
           [
-            "GET /api/restaurants/:id",
-            "Public",
-            "Full restaurant detail including contact, hours, and delivery settings.",
+            'GET /api/restaurants/:id',
+            'Public',
+            'Full restaurant detail including contact, hours, and delivery settings.',
           ],
           [
-            "GET /api/restaurants/:id/menu",
-            "Public",
-            "Available food items, optionally filtered by category.",
+            'GET /api/restaurants/:id/menu',
+            'Public',
+            'Available food items, optionally filtered by category.',
           ],
           [
-            "GET /api/restaurants/:id/status",
-            "Public",
-            "Just isOpen plus operatingHours — the cheapest possible status poll.",
+            'GET /api/restaurants/:id/status',
+            'Public',
+            'Just isOpen plus operatingHours — the cheapest possible status poll.',
           ],
           [
-            "POST /api/restaurants/:id/check-delivery",
-            "Public",
-            "Distance, delivery fee, minimum order, and estimated time for a coordinate.",
+            'POST /api/restaurants/:id/check-delivery',
+            'Public',
+            'Distance, delivery fee, minimum order, and estimated time for a coordinate.',
           ],
           [
-            "GET /api/restaurants/restaurant",
-            "Owner",
-            "The caller’s own restaurant profile.",
+            'GET /api/restaurants/restaurant',
+            'Owner',
+            'The caller’s own restaurant profile.',
           ],
           [
-            "POST /api/restaurants",
-            "Owner",
-            "Create the restaurant and backfill the owner’s restaurantProfile.",
+            'POST /api/restaurants',
+            'Owner',
+            'Create the restaurant and backfill the owner’s restaurantProfile.',
           ],
           [
-            "PUT /api/restaurants/restaurant",
-            "Owner",
-            "Update own restaurant with schema validators running.",
+            'PUT /api/restaurants/restaurant',
+            'Owner',
+            'Update own restaurant with schema validators running.',
           ],
           [
-            "PUT /api/restaurants/restaurant/toggle-status",
-            "Owner",
-            "Flip isOpen manually, ahead of the scheduled hours sync.",
+            'PUT /api/restaurants/restaurant/toggle-status',
+            'Owner',
+            'Flip isOpen manually, ahead of the scheduled hours sync.',
           ],
         ]}
       />
@@ -743,8 +743,8 @@ export function BackendRestaurantApis() {
       <h2>Listing and filtering</h2>
 
       <p>
-        The base query is not an empty object. Every public listing starts from{" "}
-        <code>{"{ isActive: true, isVerified: true }"}</code>, because an
+        The base query is not an empty object. Every public listing starts from{' '}
+        <code>{'{ isActive: true, isVerified: true }'}</code>, because an
         unverified or suspended restaurant must never appear to a customer
         regardless of what else matches. Those two predicates belong in the
         query, not in a controller-level filter applied afterwards.
@@ -792,11 +792,11 @@ export function BackendRestaurantApis() {
 
       <Callout variant="danger" title="Unescaped $regex is a denial-of-service">
         <p>
-          The controller above passes <code>search</code> straight into{" "}
+          The controller above passes <code>search</code> straight into{' '}
           <code>$regex</code>. That is fine for learning and dangerous in
           production: a pattern like <code>(a+)+$</code> forces MongoDB into
           catastrophic backtracking on every document in the collection. In
-          production, escape the input or switch to a text index — see{" "}
+          production, escape the input or switch to a text index — see{' '}
           <a href="/docs/production/scaling">Scaling &amp; Performance</a>.
         </p>
       </Callout>
@@ -813,33 +813,33 @@ export function BackendRestaurantApis() {
       <p>
         A customer should never see a restaurant they cannot order from. Showing
         a closed restaurant is worse than omitting it: the user builds a cart,
-        discovers the problem at checkout, and blames the product. So{" "}
+        discovers the problem at checkout, and blames the product. So{' '}
         <code>isOpen: true</code> is a filter on the public listing, on the food
         listing, and on the menu endpoint — not just a badge rendered in the UI.
       </p>
 
       <PropertyTable
-        headers={["Endpoint", "Closed restaurant behaviour"]}
+        headers={['Endpoint', 'Closed restaurant behaviour']}
         rows={[
           [
-            "GET /api/restaurants",
-            "Excluded from results when ?isOpen=true; shown greyed-out otherwise so the customer can plan ahead.",
+            'GET /api/restaurants',
+            'Excluded from results when ?isOpen=true; shown greyed-out otherwise so the customer can plan ahead.',
           ],
           [
-            "GET /api/food",
-            "Excluded entirely — items from closed restaurants are not listed.",
+            'GET /api/food',
+            'Excluded entirely — items from closed restaurants are not listed.',
           ],
           [
-            "GET /api/restaurants/:id/menu",
+            'GET /api/restaurants/:id/menu',
             'Returns 400 with "Restaurant is currently closed".',
           ],
           [
-            "POST /api/restaurants/:id/check-delivery",
-            "Returns 400 before any distance maths runs.",
+            'POST /api/restaurants/:id/check-delivery',
+            'Returns 400 before any distance maths runs.',
           ],
           [
-            "POST /api/orders",
-            "Rejected during order creation, after the cart is read.",
+            'POST /api/orders',
+            'Rejected during order creation, after the cart is read.',
           ],
         ]}
       />
@@ -884,7 +884,7 @@ export function BackendRestaurantApis() {
       </p>
 
       <p>
-        MongoDB solves this natively, but only with the right index. The{" "}
+        MongoDB solves this natively, but only with the right index. The{' '}
         <code>Restaurant</code> schema already declares one:
       </p>
 
@@ -987,27 +987,27 @@ restaurantSchema.index({ rating: -1 });`}
       />
 
       <PropertyTable
-        headers={["Operator", "Use it when", "Gotcha"]}
+        headers={['Operator', 'Use it when', 'Gotcha']}
         rows={[
           [
-            "$near",
-            "Simple find() with radius and implicit distance sort",
-            "Cannot be combined with $or, $nor, $and at the same level",
+            '$near',
+            'Simple find() with radius and implicit distance sort',
+            'Cannot be combined with $or, $nor, $and at the same level',
           ],
           [
-            "$nearSphere",
-            "Same, but with true spherical great-circle maths",
-            "Slightly slower than $near; identical results on a 2dsphere index",
+            '$nearSphere',
+            'Same, but with true spherical great-circle maths',
+            'Slightly slower than $near; identical results on a 2dsphere index',
           ],
           [
-            "$geoWithin + $centerSphere",
-            "A radius query you do not need sorted",
-            "No distance value is returned",
+            '$geoWithin + $centerSphere',
+            'A radius query you do not need sorted',
+            'No distance value is returned',
           ],
           [
-            "$geoNear (pipeline)",
-            "You need the distance in the document, to sort or filter on it",
-            "Must be the first stage of the pipeline; cannot $skip or $limit before it",
+            '$geoNear (pipeline)',
+            'You need the distance in the document, to sort or filter on it',
+            'Must be the first stage of the pipeline; cannot $skip or $limit before it',
           ],
         ]}
       />
@@ -1023,7 +1023,7 @@ restaurantSchema.index({ rating: -1 });`}
       </Callout>
 
       <p>
-        The existing endpoints deliberately do not use <code>$geoNear</code>.{" "}
+        The existing endpoints deliberately do not use <code>$geoNear</code>.{' '}
         <code>check-delivery</code> and the rider availability query operate on
         a <em>single</em> known restaurant and a <em>single</em> rider position,
         so both compute one distance in application code using the Haversine
@@ -1122,10 +1122,10 @@ restaurantSchema.index({ rating: -1 });`}
 
       <Callout variant="warning" title="This is a hint, not a gate">
         <p>
-          <code>check-delivery</code> is advisory. Between the customer seeing{" "}
+          <code>check-delivery</code> is advisory. Between the customer seeing{' '}
           <code>canDeliver: true</code> and pressing place-order, the restaurant
           can close or change its radius. The same checks therefore run again
-          inside <code>POST /api/orders</code> — see{" "}
+          inside <code>POST /api/orders</code> — see{' '}
           <a href="/docs/backend/cart-orders">Cart &amp; Order APIs</a>. Never
           treat a passing pre-check as authorisation.
         </p>
@@ -1226,30 +1226,30 @@ const total = result.total[0]?.count ?? 0;`}
       />
 
       <PropertyTable
-        headers={["Technique", "Queries", "Use when"]}
+        headers={['Technique', 'Queries', 'Use when']}
         rows={[
           [
-            "populate()",
-            "1 + 1 per populated path",
-            "The referenced document is a single doc on a local replica set.",
+            'populate()',
+            '1 + 1 per populated path',
+            'The referenced document is a single doc on a local replica set.',
           ],
           [
-            "$lookup with a pipeline",
-            "1",
-            "You need a filtered or aggregated join — this is the general case.",
+            '$lookup with a pipeline',
+            '1',
+            'You need a filtered or aggregated join — this is the general case.',
           ],
-          ["$facet", "1", "You need both a page of data and a total count."],
+          ['$facet', '1', 'You need both a page of data and a total count.'],
           [
-            "Promise.all over batched ids",
-            "2",
-            "Mongoose lean() plus a single find({ _id: { $in: ids } }).",
+            'Promise.all over batched ids',
+            '2',
+            'Mongoose lean() plus a single find({ _id: { $in: ids } }).',
           ],
         ]}
       />
 
       <Callout variant="tip" title="select and lean together">
         <p>
-          List endpoints should end in <code>.select(...)</code> and{" "}
+          List endpoints should end in <code>.select(...)</code> and{' '}
           <code>.lean()</code>. <code>.lean()</code> skips hydration into
           Mongoose documents, which on a 20-item list is a measurable fraction
           of total response time. Reserve full documents for writes and for
@@ -1261,9 +1261,9 @@ const total = result.total[0]?.count ?? 0;`}
 
       <p>
         The menu endpoint filters on availability rather than hiding unavailable
-        items client-side, so a sold-out bowl never reaches a cart. Sorting by{" "}
-        <code>{"{ categoryId: 1, name: 1 }"}</code> groups the menu into the
-        order a kitchen expects, backed by the compound index on the{" "}
+        items client-side, so a sold-out bowl never reaches a cart. Sorting by{' '}
+        <code>{'{ categoryId: 1, name: 1 }'}</code> groups the menu into the
+        order a kitchen expects, backed by the compound index on the{' '}
         <code>FoodItem</code> schema.
       </p>
 
@@ -1299,7 +1299,7 @@ const total = result.total[0]?.count ?? 0;`}
       <h2>Owner endpoints</h2>
 
       <p>
-        Every owner route resolves the restaurant from <code>ownerId</code>{" "}
+        Every owner route resolves the restaurant from <code>ownerId</code>{' '}
         rather than accepting an id. That single line is what stops one
         restaurant owner editing another restaurant&rsquo;s menu.
       </p>
@@ -1342,10 +1342,10 @@ const total = result.total[0]?.count ?? 0;`}
 
       <Callout variant="note" title="Why one restaurant per owner">
         <p>
-          The <code>{"findOne({ ownerId })"}</code> guard is a deliberate
-          modelling choice. Supporting multiple restaurants per owner means{" "}
+          The <code>{'findOne({ ownerId })'}</code> guard is a deliberate
+          modelling choice. Supporting multiple restaurants per owner means{' '}
           <code>findOne</code> becomes <code>find</code> everywhere, ownership
-          checks become a separate lookup, and every owner endpoint needs an{" "}
+          checks become a separate lookup, and every owner endpoint needs an{' '}
           <code>activeRestaurantId</code> in the request. One-to-one keeps all
           of that out of the codebase. Revisit it if multi-location operators
           become a real requirement — not before.
@@ -1355,31 +1355,31 @@ const total = result.total[0]?.count ?? 0;`}
       <h2>Performance checklist</h2>
 
       <PropertyTable
-        headers={["Concern", "What NutriDeliver does"]}
+        headers={['Concern', 'What NutriDeliver does']}
         rows={[
           [
-            "Query shape",
-            "Base predicate of isActive + isVerified on every public query; projections on every list.",
+            'Query shape',
+            'Base predicate of isActive + isVerified on every public query; projections on every list.',
           ],
           [
-            "Indexes",
-            "2dsphere on coordinates, plus singles on cuisineType, isOpen, and rating.",
+            'Indexes',
+            '2dsphere on coordinates, plus singles on cuisineType, isOpen, and rating.',
           ],
           [
-            "N+1",
-            "Avoided with $lookup or $facet; never a query inside a loop.",
+            'N+1',
+            'Avoided with $lookup or $facet; never a query inside a loop.',
           ],
           [
-            "Pagination",
-            "page/limit capped at 50, with a parallel countDocuments.",
+            'Pagination',
+            'page/limit capped at 50, with a parallel countDocuments.',
           ],
           [
-            "Sort",
-            "Validated against a Joi allow-list before reaching MongoDB.",
+            'Sort',
+            'Validated against a Joi allow-list before reaching MongoDB.',
           ],
           [
-            "Caching",
-            "Catalogue reads are the obvious candidates for the middleware/cache.js layer.",
+            'Caching',
+            'Catalogue reads are the obvious candidates for the middleware/cache.js layer.',
           ],
         ]}
       />
@@ -1390,7 +1390,7 @@ const total = result.total[0]?.count ?? 0;`}
         decide what a customer actually pays are enforced.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendCartOrders() {
@@ -1415,31 +1415,31 @@ export function BackendCartOrders() {
       </p>
 
       <PropertyTable
-        headers={["Endpoint", "Behaviour"]}
+        headers={['Endpoint', 'Behaviour']}
         rows={[
           [
-            "GET /api/cart",
-            "Returns the cart, creating an empty one if needed. Items that became unavailable are pruned on read.",
+            'GET /api/cart',
+            'Returns the cart, creating an empty one if needed. Items that became unavailable are pruned on read.',
           ],
           [
-            "POST /api/cart/add",
-            "Adds or increments an item. Rejects cross-restaurant adds. Recomputes totalAmount.",
+            'POST /api/cart/add',
+            'Adds or increments an item. Rejects cross-restaurant adds. Recomputes totalAmount.',
           ],
           [
-            "PUT /api/cart/update/:itemId",
-            "Sets quantity. A quantity of zero or less removes the line.",
+            'PUT /api/cart/update/:itemId',
+            'Sets quantity. A quantity of zero or less removes the line.',
           ],
           [
-            "DELETE /api/cart/remove/:itemId",
-            "Removes the line; nulls restaurantId once the cart is empty.",
+            'DELETE /api/cart/remove/:itemId',
+            'Removes the line; nulls restaurantId once the cart is empty.',
           ],
           [
-            "DELETE /api/cart/clear",
-            "Empties items, total, restaurant, and applied offer.",
+            'DELETE /api/cart/clear',
+            'Empties items, total, restaurant, and applied offer.',
           ],
           [
-            "POST /api/cart/apply-offer",
-            "Validates and attaches a discount, returning the new final amount.",
+            'POST /api/cart/apply-offer',
+            'Validates and attaches a discount, returning the new final amount.',
           ],
         ]}
       />
@@ -1530,7 +1530,7 @@ export function BackendCartOrders() {
         <p>
           The cart&rsquo;s <code>totalAmount</code> and line prices exist so the
           customer sees a stable number while shopping. They are a convenience,
-          not an authority — the same numbers are recomputed from{" "}
+          not an authority — the same numbers are recomputed from{' '}
           <code>FoodItem</code> documents at order creation. Never charge
           against the cart&rsquo;s stored total.
         </p>
@@ -1558,7 +1558,7 @@ export function BackendCartOrders() {
       <Steps>
         <Step title="Read the cart, not the request">
           <p>
-            The order is built from the server&rsquo;s cart. The client&rsquo;s{" "}
+            The order is built from the server&rsquo;s cart. The client&rsquo;s{' '}
             <code>items</code> array is not consulted — a client that sends
             <code>price: 0</code> gets nothing, because that field is never
             read.
@@ -1753,42 +1753,42 @@ export function BackendCartOrders() {
         title="The total is never accepted from the client"
       >
         <p>
-          <code>POST /api/orders</code> does not read a <code>total</code>, a{" "}
+          <code>POST /api/orders</code> does not read a <code>total</code>, a{' '}
           <code>price</code>, or a <code>discount</code> from the request body
-          at all. This is not a style preference. A client that posts{" "}
-          <code>{"{ grandTotal: 0 }"}</code> and receives a real order is a
+          at all. This is not a style preference. A client that posts{' '}
+          <code>{'{ grandTotal: 0 }'}</code> and receives a real order is a
           total loss for every order placed — the most common exploit in any
           food-delivery codebase.
         </p>
       </Callout>
 
       <PropertyTable
-        headers={["Field", "Source", "Notes"]}
+        headers={['Field', 'Source', 'Notes']}
         rows={[
           [
-            "orderTotal",
-            "Sum of cart line price × quantity",
-            "Line prices were snapshotted when the item was added.",
+            'orderTotal',
+            'Sum of cart line price × quantity',
+            'Line prices were snapshotted when the item was added.',
           ],
           [
-            "deliveryFee",
-            "restaurant.deliverySettings.deliveryFee",
-            "Default 2.99 when unset.",
+            'deliveryFee',
+            'restaurant.deliverySettings.deliveryFee',
+            'Default 2.99 when unset.',
           ],
           [
-            "tax",
-            "orderTotal × TAX_RATE",
-            "10% on food, not on the delivery fee.",
+            'tax',
+            'orderTotal × TAX_RATE',
+            '10% on food, not on the delivery fee.',
           ],
           [
-            "discountAmount",
-            "cart.appliedOffer.discountAmount",
-            "Set by offer validation, never by the client.",
+            'discountAmount',
+            'cart.appliedOffer.discountAmount',
+            'Set by offer validation, never by the client.',
           ],
           [
-            "grandTotal",
-            "orderTotal + deliveryFee + tax − discount",
-            "The exact figure Stripe will charge, in dollars.",
+            'grandTotal',
+            'orderTotal + deliveryFee + tax − discount',
+            'The exact figure Stripe will charge, in dollars.',
           ],
         ]}
       />
@@ -1914,7 +1914,7 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
 
       <Callout variant="tip" title="Record who moved it, not just what">
         <p>
-          Every write to <code>status</code> appends an entry to{" "}
+          Every write to <code>status</code> appends an entry to{' '}
           <code>statusHistory</code> with the status, the actor, the role, and a
           timestamp. When a customer disputes &ldquo;the restaurant never
           accepted my order&rdquo;, the audit trail answers it without a single
@@ -1979,13 +1979,13 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
         title="The same technique closes every rider race"
       >
         <p>
-          <code>confirm-pickup</code>, <code>confirm-delivery</code>, and{" "}
-          <code>location</code> all follow the same shape:{" "}
+          <code>confirm-pickup</code>, <code>confirm-delivery</code>, and{' '}
+          <code>location</code> all follow the same shape:{' '}
           <code>
             {
               "{ _id, 'deliveryDetails.riderId': req.user.id, status: expected }"
             }
-          </code>{" "}
+          </code>{' '}
           as the filter, the change as the update. A rider who has already
           confirmed delivery cannot confirm it again, and cannot update the
           location of an order that is no longer theirs.
@@ -2051,8 +2051,8 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
       />
 
       <p>
-        A restaurant rejection follows a different path:{" "}
-        <code>respondToOrder</code> sets <code>cancelled</code> directly on a{" "}
+        A restaurant rejection follows a different path:{' '}
+        <code>respondToOrder</code> sets <code>cancelled</code> directly on a{' '}
         <code>pending</code> order and appends the reason to the order&rsquo;s
         instructions, which is why rejections are explained to the customer
         through the order record rather than a notification the customer may
@@ -2134,8 +2134,8 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
 
       <Callout variant="note" title="Guard re-rating">
         <p>
-          The controller above overwrites an existing rating. Add{" "}
-          <code>{"order.rating: { $exists: false }"}</code> to the query, or a
+          The controller above overwrites an existing rating. Add{' '}
+          <code>{'order.rating: { $exists: false }'}</code> to the query, or a
           customer can rate the same delivery repeatedly and inflate or deflate
           a restaurant&rsquo;s score at will.
         </p>
@@ -2182,9 +2182,9 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
       />
 
       <p>
-        One subtlety worth noting: riders are assigned under{" "}
+        One subtlety worth noting: riders are assigned under{' '}
         <code>deliveryDetails.riderId</code>, while this query filters on a
-        top-level <code>riderId</code>. Align the two — either add{" "}
+        top-level <code>riderId</code>. Align the two — either add{' '}
         <code>'deliveryDetails.riderId'</code> to the rider branch, or keep a
         mirrored top-level field updated on assignment — or a rider will 404 on
         the order they are actively delivering.
@@ -2193,35 +2193,35 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
       <h2>Rules to carry into the tests</h2>
 
       <PropertyTable
-        headers={["Rule", "Test that proves it"]}
+        headers={['Rule', 'Test that proves it']}
         rows={[
           [
-            "Totals are server-computed",
-            "POST an order with no body total; assert grandTotal equals the documented formula.",
+            'Totals are server-computed',
+            'POST an order with no body total; assert grandTotal equals the documented formula.',
           ],
           [
-            "Cart cleared only after success",
-            "Force Order.create to throw; assert the cart is still populated.",
+            'Cart cleared only after success',
+            'Force Order.create to throw; assert the cart is still populated.',
           ],
           [
-            "Cross-restaurant cart is refused",
-            "Add item A, then item B; expect 400 and an unchanged cart.",
+            'Cross-restaurant cart is refused',
+            'Add item A, then item B; expect 400 and an unchanged cart.',
           ],
           [
-            "Illegal transitions rejected",
-            "PUT status: delivered on a pending order; expect 400.",
+            'Illegal transitions rejected',
+            'PUT status: delivered on a pending order; expect 400.',
           ],
           [
-            "Rider accept is exclusive",
-            "Two concurrent accepts; exactly one succeeds.",
+            'Rider accept is exclusive',
+            'Two concurrent accepts; exactly one succeeds.',
           ],
           [
-            "Rating is owner-scoped",
-            "User B rates user A’s delivered order; expect 404.",
+            'Rating is owner-scoped',
+            'User B rates user A’s delivered order; expect 404.',
           ],
           [
-            "Offer usage is counted once",
-            "Order with an offer, assert usedCount incremented exactly once.",
+            'Offer usage is counted once',
+            'Order with an offer, assert usedCount incremented exactly once.',
           ],
         ]}
       />
@@ -2232,7 +2232,7 @@ orderSchema.methods.canTransitionTo = function (newStatus) {
         treated as confirmed until the payment provider says so.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendPayments() {
@@ -2250,7 +2250,7 @@ export function BackendPayments() {
       <h2>Why PaymentIntents</h2>
 
       <p>
-        Stripe offers several payment flows. NutriDeliver uses{" "}
+        Stripe offers several payment flows. NutriDeliver uses{' '}
         <strong>PaymentIntents</strong> because they model the actual lifecycle
         of a card charge: it is created, it requires a payment method, it is
         confirmed, it succeeds or fails, and it can later be captured or
@@ -2259,22 +2259,22 @@ export function BackendPayments() {
       </p>
 
       <PropertyTable
-        headers={["Approach", "Why not", "What to use instead"]}
+        headers={['Approach', 'Why not', 'What to use instead']}
         rows={[
           [
-            "Charges API",
-            "No place to hold a pending authorisation. Failed cards require a new charge, and double charges are trivial.",
-            "PaymentIntents",
+            'Charges API',
+            'No place to hold a pending authorisation. Failed cards require a new charge, and double charges are trivial.',
+            'PaymentIntents',
           ],
           [
-            "Checkout Sessions",
-            "Redirects the customer off-app. Correct for one-off SaaS, wrong for an in-app marketplace checkout.",
-            "PaymentIntents + Stripe SDK",
+            'Checkout Sessions',
+            'Redirects the customer off-app. Correct for one-off SaaS, wrong for an in-app marketplace checkout.',
+            'PaymentIntents + Stripe SDK',
           ],
           [
-            "Client-only confirmation",
-            "The client decides whether it paid. Tapping is not payment.",
-            "Webhook as source of truth",
+            'Client-only confirmation',
+            'The client decides whether it paid. Tapping is not payment.',
+            'Webhook as source of truth',
           ],
         ]}
       />
@@ -2399,12 +2399,12 @@ export const createPaymentIntent = asyncHandler(async (req, res) => {
         title="This endpoint bypasses the state machine"
       >
         <p>
-          Setting <code>status: 'confirmed'</code> directly skips the{" "}
-          <code>canTransitionTo</code> check that{" "}
+          Setting <code>status: 'confirmed'</code> directly skips the{' '}
+          <code>canTransitionTo</code> check that{' '}
           <a href="/docs/backend/cart-orders">Cart &amp; Order APIs</a> enforces
           everywhere else. It works because <code>pending → confirmed</code> is
           legal, but the guarantee is accidental. Push this through the same
-          transition helper the restaurant controller uses, and append to{" "}
+          transition helper the restaurant controller uses, and append to{' '}
           <code>statusHistory</code> so the audit trail is complete.
         </p>
       </Callout>
@@ -2452,10 +2452,10 @@ export const createPaymentIntent = asyncHandler(async (req, res) => {
       <h3>The raw-body gotcha</h3>
 
       <p>
-        This is the single most common reason a Stripe webhook returns{" "}
+        This is the single most common reason a Stripe webhook returns{' '}
         <code>400 No signatures found</code> in a codebase that otherwise looks
         correct. <code>stripe.webhooks.constructEvent</code> verifies an HMAC
-        signature computed over the <em>exact bytes</em> of the request body. If{" "}
+        signature computed over the <em>exact bytes</em> of the request body. If{' '}
         <code>express.json()</code> has already parsed that body, the original
         bytes are gone — re-serialising produces different whitespace, different
         key ordering, and a signature that does not match.
@@ -2491,7 +2491,7 @@ app.use('/api/payments', paymentRoutes)`}
 
       <Callout variant="danger" title="Order of registration is load-bearing">
         <p>
-          Middleware matches in registration order. Move the webhook route below{" "}
+          Middleware matches in registration order. Move the webhook route below{' '}
           <code>app.use(express.json())</code> and the endpoint stops working —
           silently, because a 400 from signature verification looks like a
           Stripe configuration problem rather than a middleware ordering one.
@@ -2586,32 +2586,32 @@ app.use('/api/payments', paymentRoutes)`}
       />
 
       <PropertyTable
-        headers={["Event", "Order field", "Also do"]}
+        headers={['Event', 'Order field', 'Also do']}
         rows={[
           [
-            "payment_intent.succeeded",
-            "paymentStatus → paid, status → confirmed",
-            "Notify the customer and the restaurant; kick off preparation.",
+            'payment_intent.succeeded',
+            'paymentStatus → paid, status → confirmed',
+            'Notify the customer and the restaurant; kick off preparation.',
           ],
           [
-            "payment_intent.payment_failed",
-            "paymentStatus → failed",
-            "Notify the customer so they can retry with another method.",
+            'payment_intent.payment_failed',
+            'paymentStatus → failed',
+            'Notify the customer so they can retry with another method.',
           ],
           [
-            "charge.refunded",
-            "paymentStatus → refunded",
-            "Notify both parties; adjust restaurant earnings.",
+            'charge.refunded',
+            'paymentStatus → refunded',
+            'Notify both parties; adjust restaurant earnings.',
           ],
           [
-            "payment_intent.canceled",
-            "paymentStatus → failed",
-            "Release the pending order so it can be cancelled cleanly.",
+            'payment_intent.canceled',
+            'paymentStatus → failed',
+            'Release the pending order so it can be cancelled cleanly.',
           ],
           [
-            "charge.dispute.created",
-            "nothing automatic",
-            "Flag the order for admin review — never auto-refund a dispute.",
+            'charge.dispute.created',
+            'nothing automatic',
+            'Flag the order for admin review — never auto-refund a dispute.',
           ],
         ]}
       />
@@ -2619,7 +2619,7 @@ app.use('/api/payments', paymentRoutes)`}
       <h3>Idempotency</h3>
 
       <p>
-        Stripe delivers at least once. The same{" "}
+        Stripe delivers at least once. The same{' '}
         <code>payment_intent.succeeded</code> can arrive twice — a network
         retry, a manual resend from the dashboard, a duplicate during a provider
         incident. Every handler above is written to be replay-safe: the order
@@ -2728,7 +2728,7 @@ export const webhookHandler = async (req, res) => {
       >
         <p>
           The repository&rsquo;s refund controller has the Stripe call commented
-          out, because the order document does not persist{" "}
+          out, because the order document does not persist{' '}
           <code>paymentIntentId</code> yet — the webhook in this chapter writes
           it. Until that field exists there is nothing to refund against, so
           this is the first thing to fix if you are reading this as a checklist.
@@ -2780,23 +2780,23 @@ export const webhookHandler = async (req, res) => {
       <h2>Rate limiting and testing</h2>
 
       <PropertyTable
-        headers={["Concern", "Configuration"]}
+        headers={['Concern', 'Configuration']}
         rows={[
           [
-            "Payment limiter",
-            "30 requests per 15 minutes per IP, applied to all of /api/payments via router.use(paymentLimiter).",
+            'Payment limiter',
+            '30 requests per 15 minutes per IP, applied to all of /api/payments via router.use(paymentLimiter).',
           ],
           [
-            "Test cards",
-            "4242 4242 4242 4242 succeeds; 4000 0000 0000 9995 declines.",
+            'Test cards',
+            '4242 4242 4242 4242 succeeds; 4000 0000 0000 9995 declines.',
           ],
           [
-            "Local webhooks",
-            "stripe listen --forward-to localhost:5000/api/payments/webhook",
+            'Local webhooks',
+            'stripe listen --forward-to localhost:5000/api/payments/webhook',
           ],
           [
-            "Signature secret",
-            "stripe listen prints whsec_… — use it as STRIPE_WEBHOOK_SECRET.",
+            'Signature secret',
+            'stripe listen prints whsec_… — use it as STRIPE_WEBHOOK_SECRET.',
           ],
         ]}
       />
@@ -2807,7 +2807,7 @@ export const webhookHandler = async (req, res) => {
             code={`stripe listen --forward-to localhost:5000/api/payments/webhook`}
           />
           <p>
-            The CLI prints a signing secret. Put it in <code>.env</code> as{" "}
+            The CLI prints a signing secret. Put it in <code>.env</code> as{' '}
             <code>STRIPE_WEBHOOK_SECRET</code> — do not use the dashboard
             secret, which will not match locally forwarded events.
           </p>
@@ -2827,8 +2827,8 @@ export const webhookHandler = async (req, res) => {
           <p>
             The <code>stripe listen</code> terminal prints every event
             delivered. A <code>payment_intent.succeeded</code> should appear
-            within a second or two of the test card being confirmed, and{" "}
-            <code>paymentStatus</code> on the order should become{" "}
+            within a second or two of the test card being confirmed, and{' '}
+            <code>paymentStatus</code> on the order should become{' '}
             <code>paid</code> without you doing anything.
           </p>
         </Step>
@@ -2845,35 +2845,35 @@ export const webhookHandler = async (req, res) => {
       <h2>The pre-launch checklist</h2>
 
       <PropertyTable
-        headers={["Check", "Why it matters"]}
+        headers={['Check', 'Why it matters']}
         rows={[
           [
-            "Webhook route mounted before express.json()",
-            "Otherwise signature verification can never pass.",
+            'Webhook route mounted before express.json()',
+            'Otherwise signature verification can never pass.',
           ],
           [
-            "constructEvent is called and errors are handled",
-            "Skipping it accepts forged payment confirmations.",
+            'constructEvent is called and errors are handled',
+            'Skipping it accepts forged payment confirmations.',
           ],
           [
-            "No secret key or client secret leaks to the client",
-            "The client secret is safe to share; the secret key is not.",
+            'No secret key or client secret leaks to the client',
+            'The client secret is safe to share; the secret key is not.',
           ],
           [
-            "Amount always read from the order",
-            "The only defence against paying one cent.",
+            'Amount always read from the order',
+            'The only defence against paying one cent.',
           ],
           [
-            "paymentIntentId persisted on the order",
-            "Without it, refunds cannot be executed.",
+            'paymentIntentId persisted on the order',
+            'Without it, refunds cannot be executed.',
           ],
           [
-            "Webhook handlers are idempotent",
-            "Stripe guarantees at-least-once delivery.",
+            'Webhook handlers are idempotent',
+            'Stripe guarantees at-least-once delivery.',
           ],
           [
-            "Test mode fully exercised before going live",
-            "Decline paths are where production payment bugs live.",
+            'Test mode fully exercised before going live',
+            'Decline paths are where production payment bugs live.',
           ],
         ]}
       />
@@ -2882,7 +2882,7 @@ export const webhookHandler = async (req, res) => {
         <p>
           A leaked live secret key lets an attacker charge real cards to your
           account, and Stripe&rsquo;s key rotation is disruptive rather than
-          instant. Keep <code>sk_live_</code> and{" "}
+          instant. Keep <code>sk_live_</code> and{' '}
           <code>STRIPE_WEBHOOK_SECRET</code> in a secrets manager, scoped to the
           production deploy only.
         </p>
@@ -2894,7 +2894,7 @@ export const webhookHandler = async (req, res) => {
         that must all be checked in one place.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendOffers() {
@@ -2913,62 +2913,62 @@ export function BackendOffers() {
       <h2>The offer</h2>
 
       <PropertyTable
-        headers={["Field", "Type", "Meaning"]}
+        headers={['Field', 'Type', 'Meaning']}
         rows={[
           [
-            "code",
-            "string, unique",
-            "What the customer types. Stored and matched case-insensitively, upper-cased on write.",
+            'code',
+            'string, unique',
+            'What the customer types. Stored and matched case-insensitively, upper-cased on write.',
           ],
           [
-            "description",
-            "string",
+            'description',
+            'string',
             'Customer-facing explanation: "20% off your first order".',
           ],
           [
-            "discountType",
+            'discountType',
             "'percentage' | 'fixed'",
-            "Whether discountValue is a percentage or an absolute amount.",
+            'Whether discountValue is a percentage or an absolute amount.',
           ],
           [
-            "discountValue",
-            "number",
-            "The percentage (0–100) or the flat amount in dollars.",
+            'discountValue',
+            'number',
+            'The percentage (0–100) or the flat amount in dollars.',
           ],
           [
-            "maxDiscount",
-            "number",
-            "Ceiling for percentage offers. Without it, 20% off a $200 order is a $40 hole.",
+            'maxDiscount',
+            'number',
+            'Ceiling for percentage offers. Without it, 20% off a $200 order is a $40 hole.',
           ],
           [
-            "minOrderAmount",
-            "number",
-            "Subtotal below which the code is worthless. Checked against food subtotal, not grand total.",
+            'minOrderAmount',
+            'number',
+            'Subtotal below which the code is worthless. Checked against food subtotal, not grand total.',
           ],
           [
-            "validFrom / validUntil",
-            "Date",
-            "The window. Both are checked on every validation, not cached.",
+            'validFrom / validUntil',
+            'Date',
+            'The window. Both are checked on every validation, not cached.',
           ],
           [
-            "usageLimit / usedCount",
-            "number",
-            "Total redemptions allowed, and how many have happened.",
+            'usageLimit / usedCount',
+            'number',
+            'Total redemptions allowed, and how many have happened.',
           ],
           [
-            "applicableCategories",
-            "ObjectId[]",
-            "Empty array means all categories.",
+            'applicableCategories',
+            'ObjectId[]',
+            'Empty array means all categories.',
           ],
           [
-            "applicableRestaurants",
-            "ObjectId[]",
-            "Empty array means all restaurants.",
+            'applicableRestaurants',
+            'ObjectId[]',
+            'Empty array means all restaurants.',
           ],
           [
-            "isActive",
-            "boolean",
-            "The admin kill switch. Independent of the date window.",
+            'isActive',
+            'boolean',
+            'The admin kill switch. Independent of the date window.',
           ],
         ]}
       />
@@ -3047,10 +3047,10 @@ export function BackendOffers() {
 
       <Callout variant="warning" title="Two $or clauses cannot coexist">
         <p>
-          The second <code>$or</code> overwrites the first — assigning{" "}
+          The second <code>$or</code> overwrites the first — assigning{' '}
           <code>query.$or</code> twice means the restaurant filter is silently
           discarded when a category is also supplied. Build the scope as a
-          single <code>$and</code> of named clauses, or accumulate into one{" "}
+          single <code>$and</code> of named clauses, or accumulate into one{' '}
           <code>$or</code> array. This is a live bug in the controller above and
           a good illustration of why filters deserve tests.
         </p>
@@ -3061,7 +3061,7 @@ export function BackendOffers() {
       <p>
         <code>POST /api/offers/validate</code> answers &ldquo;what would this
         code be worth?&rdquo; without committing anything. The customer types a
-        code, the app asks what it is worth, and only if they proceed does{" "}
+        code, the app asks what it is worth, and only if they proceed does{' '}
         <code>POST /api/cart/apply-offer</code> attach it. Six conditions must
         all hold, and each has a distinct failure message so the customer knows
         what to change.
@@ -3081,7 +3081,7 @@ export function BackendOffers() {
         <Step title="The usage limit has not been reached">
           <p>
             Checked against the live <code>usedCount</code>, not against any
-            cached figure. A limit of zero is treated as unlimited, so{" "}
+            cached figure. A limit of zero is treated as unlimited, so{' '}
             <code>usageLimit: null</code> means &ldquo;no limit&rdquo; rather
             than &ldquo;no uses&rdquo;.
           </p>
@@ -3224,23 +3224,23 @@ export function BackendOffers() {
       />
 
       <PropertyTable
-        headers={["Offer", "Subtotal", "Result", "Note"]}
+        headers={['Offer', 'Subtotal', 'Result', 'Note']}
         rows={[
-          ["20% off, max $10", "$40.00", "$8.00", "Below the cap."],
+          ['20% off, max $10', '$40.00', '$8.00', 'Below the cap.'],
           [
-            "20% off, max $10",
-            "$120.00",
-            "$10.00",
-            "Cap applies. Without it this is a $24 hole.",
+            '20% off, max $10',
+            '$120.00',
+            '$10.00',
+            'Cap applies. Without it this is a $24 hole.',
           ],
           [
-            "$15 off",
-            "$12.00",
-            "$12.00",
-            "Clamped to the subtotal; never negative.",
+            '$15 off',
+            '$12.00',
+            '$12.00',
+            'Clamped to the subtotal; never negative.',
           ],
-          ["$15 off", "$60.00", "$15.00", "Flat offers ignore maxDiscount."],
-          ["10% off", "$0.00", "$0.00", "Empty cart short-circuits."],
+          ['$15 off', '$60.00', '$15.00', 'Flat offers ignore maxDiscount.'],
+          ['10% off', '$0.00', '$0.00', 'Empty cart short-circuits.'],
         ]}
       />
 
@@ -3347,7 +3347,7 @@ export function BackendOffers() {
       <h2>Redeeming: increment once, atomically</h2>
 
       <p>
-        The redemption count is incremented in{" "}
+        The redemption count is incremented in{' '}
         <a href="/docs/backend/cart-orders">createOrder</a>, after the order is
         durably written. That ordering matters: incrementing first means a
         failed order write burns a user&rsquo;s single-use coupon.
@@ -3386,7 +3386,7 @@ if (!claimed) {
 
       <p>
         A 409 is the correct code here: the request is valid, but it conflicts
-        with the current state of the resource. See{" "}
+        with the current state of the resource. See{' '}
         <a href="/docs/backend/api-design">API Design &amp; Routing</a> for why
         409 beats 400 for this case.
       </p>
@@ -3449,37 +3449,37 @@ if (!claimed) {
       <h2>What to test</h2>
 
       <PropertyTable
-        headers={["Case", "Expected"]}
+        headers={['Case', 'Expected']}
         rows={[
-          ["Percentage below cap", "subtotal × value / 100"],
-          ["Percentage above cap", "Exactly maxDiscount"],
+          ['Percentage below cap', 'subtotal × value / 100'],
+          ['Percentage above cap', 'Exactly maxDiscount'],
           [
-            "Fixed discount larger than subtotal",
-            "Clamped to subtotal; grandTotal never negative",
+            'Fixed discount larger than subtotal',
+            'Clamped to subtotal; grandTotal never negative',
           ],
           [
-            "Code one day before validFrom",
-            "400 Invalid or expired offer code",
+            'Code one day before validFrom',
+            '400 Invalid or expired offer code',
           ],
           [
-            "Code one day after validUntil",
-            "400 Invalid or expired offer code",
+            'Code one day after validUntil',
+            '400 Invalid or expired offer code',
           ],
           [
-            "usedCount equals usageLimit",
-            "400 This offer has reached its usage limit",
+            'usedCount equals usageLimit',
+            '400 This offer has reached its usage limit',
           ],
           [
-            "Offer scoped to another restaurant",
-            "400 Not applicable to this restaurant",
+            'Offer scoped to another restaurant',
+            '400 Not applicable to this restaurant',
           ],
           [
-            "Two concurrent redemptions at the limit",
-            "Exactly one succeeds; the other gets 409",
+            'Two concurrent redemptions at the limit',
+            'Exactly one succeeds; the other gets 409',
           ],
           [
-            "Client posts a fabricated discountAmount",
-            "Ignored; recomputed from the offer document",
+            'Client posts a fabricated discountAmount',
+            'Ignored; recomputed from the offer document',
           ],
         ]}
       />
@@ -3491,7 +3491,7 @@ if (!claimed) {
         little care.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendUploads() {
@@ -3517,7 +3517,7 @@ export function BackendUploads() {
 
       <Split
         left={{
-          title: "Disk storage",
+          title: 'Disk storage',
           children: (
             <ul>
               <li>
@@ -3543,7 +3543,7 @@ export function BackendUploads() {
           ),
         }}
         right={{
-          title: "Memory storage",
+          title: 'Memory storage',
           children: (
             <ul>
               <li>
@@ -3569,7 +3569,7 @@ export function BackendUploads() {
         title="The repository currently uses disk storage"
       >
         <p>
-          <code>middleware/upload.js</code> in NutriDeliver configures{" "}
+          <code>middleware/upload.js</code> in NutriDeliver configures{' '}
           <code>multer.diskStorage</code> writing to <code>uploads/</code>. That
           is a fine starting point and it works locally, but it is the first
           thing to replace when you move to Cloudinary — otherwise the two
@@ -3730,7 +3730,7 @@ export const handleUploadError = (err, req, res, next) => {
 
       <Callout variant="warning" title="mimeType is a hint, not a verdict">
         <p>
-          <code>req.file.mimetype</code> comes from the client&rsquo;s{" "}
+          <code>req.file.mimetype</code> comes from the client&rsquo;s{' '}
           <code>Content-Type</code>, which anyone can set. A genuine defence
           sniffs the actual bytes — Cloudinary does this on upload, and rejects
           files it cannot decode as images. For the untrusted case (rider
@@ -3741,16 +3741,16 @@ export const handleUploadError = (err, req, res, next) => {
       <h3>Limit everything, not just size</h3>
 
       <PropertyTable
-        headers={["Limit", "Recommended", "What it prevents"]}
+        headers={['Limit', 'Recommended', 'What it prevents']}
         rows={[
           [
-            "fileSize",
-            "5 MB for images, 10 MB for documents",
-            "Memory exhaustion from a single oversized upload.",
+            'fileSize',
+            '5 MB for images, 10 MB for documents',
+            'Memory exhaustion from a single oversized upload.',
           ],
-          ["files", "5 per request", "Filling Cloudinary quota in one call."],
-          ["fields", "12", "Field-injection into multipart payloads."],
-          ["parts", "20", "Multipart smuggling with deep nesting."],
+          ['files', '5 per request', 'Filling Cloudinary quota in one call.'],
+          ['fields', '12', 'Field-injection into multipart payloads.'],
+          ['parts', '20', 'Multipart smuggling with deep nesting.'],
         ]}
       />
 
@@ -3823,37 +3823,37 @@ export const uploadRestaurantImages = asyncHandler(async (req, res) => {
       />
 
       <PropertyTable
-        headers={["Entity", "Folder", "Largest edge", "Notes"]}
+        headers={['Entity', 'Folder', 'Largest edge', 'Notes']}
         rows={[
           [
-            "User avatar",
-            "nutrideliver/avatars",
-            "512 px",
-            "Square crop; replaces the previous avatar.",
+            'User avatar',
+            'nutrideliver/avatars',
+            '512 px',
+            'Square crop; replaces the previous avatar.',
           ],
           [
-            "Restaurant images",
-            "nutrideliver/restaurants/:id",
-            "1600 px",
-            "Up to 5 per request; gallery order preserved.",
+            'Restaurant images',
+            'nutrideliver/restaurants/:id',
+            '1600 px',
+            'Up to 5 per request; gallery order preserved.',
           ],
           [
-            "Food item images",
-            "nutrideliver/food/:id",
-            "1200 px",
-            "First image is the card thumbnail.",
+            'Food item images',
+            'nutrideliver/food/:id',
+            '1200 px',
+            'First image is the card thumbnail.',
           ],
           [
-            "Rider documents",
-            "nutrideliver/riders/:id/docs",
-            "2000 px",
-            "Never publicly served; keep the folder private.",
+            'Rider documents',
+            'nutrideliver/riders/:id/docs',
+            '2000 px',
+            'Never publicly served; keep the folder private.',
           ],
           [
-            "Delivery proof",
-            "nutrideliver/proof/:orderId",
-            "1200 px",
-            "Timestamped; retained for dispute resolution.",
+            'Delivery proof',
+            'nutrideliver/proof/:orderId',
+            '1200 px',
+            'Timestamped; retained for dispute resolution.',
           ],
         ]}
       />
@@ -3928,7 +3928,7 @@ export const uploadRestaurantImages = asyncHandler(async (req, res) => {
       <Steps>
         <Step title="Restrict the mime type with an explicit allow-list">
           <p>
-            Not <code>startsWith('image/')</code> — that admits{" "}
+            Not <code>startsWith('image/')</code> — that admits{' '}
             <code>image/svg+xml</code>, which is XML that can carry script. An
             explicit set of the formats you actually accept is the whole
             difference.
@@ -3953,7 +3953,7 @@ export const uploadRestaurantImages = asyncHandler(async (req, res) => {
 
         <Step title="Serve documents from a non-public folder">
           <p>
-            A rider&rsquo;s licence is not a public image. Use{" "}
+            A rider&rsquo;s licence is not a public image. Use{' '}
             <code>type: 'authenticated'</code> in the Cloudinary upload options
             and a signed URL, so the bytes require a server-issued token.
           </p>
@@ -3979,30 +3979,30 @@ export const uploadRestaurantImages = asyncHandler(async (req, res) => {
       </Steps>
 
       <PropertyTable
-        headers={["Threat", "Defence"]}
+        headers={['Threat', 'Defence']}
         rows={[
           [
-            "Malicious upload (polyglot, SVG script)",
-            "Explicit mime allow-list; strip SVG; Cloudinary decodes and re-encodes.",
+            'Malicious upload (polyglot, SVG script)',
+            'Explicit mime allow-list; strip SVG; Cloudinary decodes and re-encodes.',
           ],
           [
-            "Memory exhaustion via large files",
-            "Multer limits.fileSize, enforced before buffering.",
+            'Memory exhaustion via large files',
+            'Multer limits.fileSize, enforced before buffering.',
           ],
           [
-            "Path traversal via filename",
-            "Random generated names; original filename never used as a path.",
+            'Path traversal via filename',
+            'Random generated names; original filename never used as a path.',
           ],
-          ["EXIF GPS leak", "Strip metadata on upload."],
+          ['EXIF GPS leak', 'Strip metadata on upload.'],
           [
-            "Orphan accumulation",
-            "Delete the previous asset on replace; sweep by folder prefix periodically.",
+            'Orphan accumulation',
+            'Delete the previous asset on replace; sweep by folder prefix periodically.',
           ],
           [
-            "Private documents served publicly",
-            "Authenticated resource type plus signed URLs.",
+            'Private documents served publicly',
+            'Authenticated resource type plus signed URLs.',
           ],
-          ["Upload spam", "Per-route rate limit plus per-user quota."],
+          ['Upload spam', 'Per-route rate limit plus per-user quota.'],
         ]}
       />
 
@@ -4051,31 +4051,31 @@ curl -X POST http://localhost:5000/api/restaurants/restaurant/images \\
       <h2>Delivery-side decisions</h2>
 
       <PropertyTable
-        headers={["Decision", "Recommendation"]}
+        headers={['Decision', 'Recommendation']}
         rows={[
           [
-            "Store URL or publicId?",
-            "Both. publicId is what makes deletion possible; the URL is what the client renders.",
+            'Store URL or publicId?',
+            'Both. publicId is what makes deletion possible; the URL is what the client renders.',
           ],
           [
-            "Eager or lazy transformations?",
-            "Lazy at delivery (URL params). One original, every size, no re-upload.",
+            'Eager or lazy transformations?',
+            'Lazy at delivery (URL params). One original, every size, no re-upload.',
           ],
           [
-            "Format on upload?",
-            "Keep quality: auto and fetch_format: auto; let Cloudinary negotiate per client.",
+            'Format on upload?',
+            'Keep quality: auto and fetch_format: auto; let Cloudinary negotiate per client.',
           ],
           [
-            "Where to cap size?",
-            "Upload-time cap for safety, delivery-time width for bandwidth.",
+            'Where to cap size?',
+            'Upload-time cap for safety, delivery-time width for bandwidth.',
           ],
           [
-            "Private documents",
-            "Authenticated resource type plus signed URLs with a short expiry.",
+            'Private documents',
+            'Authenticated resource type plus signed URLs with a short expiry.',
           ],
           [
-            "Orphan cleanup",
-            "A scheduled sweep deleting assets with no referencing document older than 24 hours.",
+            'Orphan cleanup',
+            'A scheduled sweep deleting assets with no referencing document older than 24 hours.',
           ],
         ]}
       />
@@ -4086,7 +4086,7 @@ curl -X POST http://localhost:5000/api/restaurants/restaurant/images \\
         is the last piece of the order pipeline.
       </p>
     </>
-  );
+  )
 }
 
 export function BackendNotifications() {
@@ -4102,28 +4102,28 @@ export function BackendNotifications() {
       </p>
       <h2>Three channels, three purposes</h2>
       <PropertyTable
-        headers={["Channel", "Technology", "Use it for"]}
+        headers={['Channel', 'Technology', 'Use it for']}
         rows={[
           [
-            "In-app",
-            "Notification collection + REST",
-            "The durable record. Survives app restarts, unread counts, history.",
+            'In-app',
+            'Notification collection + REST',
+            'The durable record. Survives app restarts, unread counts, history.',
           ],
           [
-            "Push",
-            "Firebase Cloud Messaging",
-            "Time-critical events. The rider must know an order is waiting even with the app closed.",
+            'Push',
+            'Firebase Cloud Messaging',
+            'Time-critical events. The rider must know an order is waiting even with the app closed.',
           ],
           [
-            "Email",
-            "Nodemailer over Gmail SMTP",
-            "Low-frequency, high-value: verification, password reset, order receipt.",
+            'Email',
+            'Nodemailer over Gmail SMTP',
+            'Low-frequency, high-value: verification, password reset, order receipt.',
           ],
         ]}
       />
       <Callout variant="note" title="In-app is the source of record">
         <p>
-          Push is best-effort and email is often unread. The{" "}
+          Push is best-effort and email is often unread. The{' '}
           <code>Notification</code> document is the only channel a user can
           reliably go back to, so it is written first and every other channel is
           treated as a copy of it.
@@ -4362,9 +4362,9 @@ export const notifyOrderParties = async (order, event) => {
 });`}
       />
       <p>
-        The repository&rsquo;s controller already exposes a{" "}
-        <code>createNotification(userId, title, message, type, data)</code>{" "}
-        helper and a <code>createNotifications</code> fan-out using{" "}
+        The repository&rsquo;s controller already exposes a{' '}
+        <code>createNotification(userId, title, message, type, data)</code>{' '}
+        helper and a <code>createNotifications</code> fan-out using{' '}
         <code>insertMany</code>. The version above is the same idea widened to
         cover all three channels — worth consolidating, because right now the
         controllers call <code>createNotification</code> and nothing sends
@@ -4428,8 +4428,8 @@ export const sendEmail = async ({ email, template, templateData }) => {
         <p>
           500 messages a day is generous for development and nowhere near enough
           for a launch. When you outgrow it, swap the transporter for Resend,
-          Postmark, or SES — which is why every call site uses{" "}
-          <code>{"sendEmail({ template, templateData })"}</code> rather than
+          Postmark, or SES — which is why every call site uses{' '}
+          <code>{'sendEmail({ template, templateData })'}</code> rather than
           touching Nodemailer directly. That signature is the abstraction.
         </p>
       </Callout>
@@ -4537,42 +4537,42 @@ export const registerPushToken = asyncHandler(async (req, res) => {
       </Callout>
       <h2>When to send what</h2>
       <PropertyTable
-        headers={["Event", "In-app", "Push", "Email"]}
+        headers={['Event', 'In-app', 'Push', 'Email']}
         rows={[
           [
-            "Order placed",
-            "Yes",
-            "Yes — to the restaurant",
-            "Receipt to the customer",
+            'Order placed',
+            'Yes',
+            'Yes — to the restaurant',
+            'Receipt to the customer',
           ],
-          ["Restaurant accepted", "Yes", "Yes — to the customer", "No"],
-          ["Food ready for pickup", "Yes", "Yes — to nearby riders", "No"],
-          ["Rider assigned", "Yes", "Yes — to the customer", "No"],
+          ['Restaurant accepted', 'Yes', 'Yes — to the customer', 'No'],
+          ['Food ready for pickup', 'Yes', 'Yes — to nearby riders', 'No'],
+          ['Rider assigned', 'Yes', 'Yes — to the customer', 'No'],
           [
-            "Picked up / out for delivery",
-            "Yes",
-            "Yes — to the customer",
-            "No",
-          ],
-          [
-            "Delivered",
-            "Yes",
-            "Yes — to the customer",
-            "Yes, with a rating link",
+            'Picked up / out for delivery',
+            'Yes',
+            'Yes — to the customer',
+            'No',
           ],
           [
-            "Cancelled or auto-cancelled",
-            "Yes",
-            "Yes — customer and restaurant",
-            "Yes",
+            'Delivered',
+            'Yes',
+            'Yes — to the customer',
+            'Yes, with a rating link',
           ],
-          ["Refund processed", "Yes", "Yes", "Yes"],
-          ["New offer", "Yes", "Yes", "Only if opted in"],
           [
-            "Email verification, password reset",
-            "No",
-            "No",
-            "Yes — these are inbox-only by nature",
+            'Cancelled or auto-cancelled',
+            'Yes',
+            'Yes — customer and restaurant',
+            'Yes',
+          ],
+          ['Refund processed', 'Yes', 'Yes', 'Yes'],
+          ['New offer', 'Yes', 'Yes', 'Only if opted in'],
+          [
+            'Email verification, password reset',
+            'No',
+            'No',
+            'Yes — these are inbox-only by nature',
           ],
         ]}
       />
@@ -4671,7 +4671,7 @@ order.save()
         title="Never await notifications on the hot path"
       >
         <p>
-          An FCM round trip takes 100–400 ms. Awaiting it inside{" "}
+          An FCM round trip takes 100–400 ms. Awaiting it inside{' '}
           <code>confirmDelivery</code> means the rider waits a third of a second
           for a message about the fact they just triggered. Persist the order
           first, respond immediately, and let delivery catch up. When
@@ -4746,44 +4746,44 @@ order.save()
       />
       <h2>What to test</h2>
       <PropertyTable
-        headers={["Case", "Expected"]}
+        headers={['Case', 'Expected']}
         rows={[
           [
-            "A notification is created",
-            "One document, unread, correctly scoped to the user.",
+            'A notification is created',
+            'One document, unread, correctly scoped to the user.',
           ],
           [
-            "Push send fails",
-            "The order still succeeds; the in-app document still exists.",
+            'Push send fails',
+            'The order still succeeds; the in-app document still exists.',
           ],
           [
-            "FCM reports an unregistered token",
-            "That token is deactivated and never retried.",
+            'FCM reports an unregistered token',
+            'That token is deactivated and never retried.',
           ],
           [
-            "Email transport throws",
-            "No unhandled rejection; the error is logged.",
+            'Email transport throws',
+            'No unhandled rejection; the error is logged.',
           ],
           [
-            "Push disabled in preferences",
-            "The in-app record is still written; no FCM call is made.",
+            'Push disabled in preferences',
+            'The in-app record is still written; no FCM call is made.',
           ],
           [
-            "Order delivered",
-            "Three notifications created: customer, restaurant, rider.",
+            'Order delivered',
+            'Three notifications created: customer, restaurant, rider.',
           ],
           [
-            "User A lists notifications",
-            "Only user A’s documents are returned, regardless of page.",
+            'User A lists notifications',
+            'Only user A’s documents are returned, regardless of page.',
           ],
-          ["mark-all-read", "A single updateMany, and unreadCount returns 0."],
+          ['mark-all-read', 'A single updateMany, and unreadCount returns 0.'],
         ]}
       />
       <p>
         Next: <a href="/docs/backend/realtime">Real-Time &amp; WebSockets</a> —
         push notifies; WebSocket is what keeps a tracking screen live while the
         customer watches a rider approach.
-      </p>{" "}
+      </p>{' '}
     </>
-  );
+  )
 }

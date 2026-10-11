@@ -1,27 +1,27 @@
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { X } from "lucide-react";
-import { Sidebar } from "./sidebar";
+import { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import { X } from 'lucide-react'
+import { Sidebar } from './sidebar'
 
-/** Slide-over navigation for small screens. */
+// slide-over nav for small screens
 export function MobileNav({ open, onClose, pathname }) {
-  const location = useLocation();
+  const location = useLocation()
 
   // Close on navigation so tapping a link returns the user to the content.
   useEffect(() => {
-    onClose();
-  }, [location.pathname, onClose]);
+    onClose()
+  }, [location.pathname, onClose])
 
   useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    if (!open) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [open]);
+      document.body.style.overflow = previous
+    }
+  }, [open])
 
-  if (!open) return null;
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">
@@ -52,5 +52,5 @@ export function MobileNav({ open, onClose, pathname }) {
         </div>
       </div>
     </div>
-  );
+  )
 }

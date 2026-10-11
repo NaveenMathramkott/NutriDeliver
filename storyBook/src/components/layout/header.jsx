@@ -6,10 +6,7 @@ import { cn } from "../../lib/utils";
 import { Logo } from "./logo";
 import { RepoBadges } from "./repo-badges";
 
-/**
- * Sticky site header. Sticky rather than fixed, so in-page anchors only need a
- * single `scroll-padding-top` to clear it.
- */
+// sticky not fixed, so in-page anchors need only a single scroll-padding-top
 export function Header({ onOpenNav }) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/85 backdrop-blur-md">

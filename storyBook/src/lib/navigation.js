@@ -1,15 +1,4 @@
-/**
- * The navigation tree for the guide.
- *
- * Each page declares a `slug`, `title`, and `description`. The sidebar,
- * prev/next pager, and search index are all derived from this single
- * structure, so adding a page here plus a body in the content registry is all
- * it takes to surface it everywhere.
- *
- * Page bodies live in `components/docs/docs-content.jsx` — deliberately a
- * separate module so importing navigation metadata (which the sidebar does on
- * every route) never drags in every page's markup.
- */
+// single source for sidebar, pager and search
 
 export const sections = [
   {
@@ -230,6 +219,41 @@ export const sections = [
     ],
   },
   {
+    title: "AI Integration",
+    pages: [
+      {
+        slug: "ai/integration",
+        title: "Where AI Belongs",
+        description:
+          "The honest case for and against, a provider-agnostic client, cost and latency budgets, fallbacks, and prompt-injection defence.",
+      },
+      {
+        slug: "ai/recommendations",
+        title: "Nutrition-Aware Recommendations",
+        description:
+          "Hard-filtered candidates from MongoDB, with the model confined to explaining them — never inventing them.",
+      },
+      {
+        slug: "ai/menu-enrichment",
+        title: "Menu Enrichment",
+        description:
+          "Turning a dish description into calories, macros, and dietary tags — the feature that fixes the platform’s weakest data.",
+      },
+      {
+        slug: "ai/forecasting",
+        title: "ETA & Demand Forecasting",
+        description:
+          "Predicting delivery times and demand per zone, with the baselines a model has to beat before it ships.",
+      },
+      {
+        slug: "ai/support",
+        title: "AI Support Agent",
+        description:
+          "Grounded answers from real order data, tool calls instead of database access, and escalation to a human.",
+      },
+    ],
+  },
+  {
     title: "Production",
     pages: [
       {
@@ -260,7 +284,7 @@ export const sections = [
   },
 ];
 
-/** Flatten the tree into an ordered list used for paging and search. */
+// flat, ordered list for paging and search
 export const flatPages = sections.flatMap((section) =>
   section.pages.map((page) => ({ ...page, section: section.title })),
 );

@@ -5,7 +5,7 @@ import { useSearch } from "../../lib/search-context";
 import { cn } from "../../lib/utils";
 import { pageHref } from "../../lib/urls";
 
-/** Command-palette style search, opened with ⌘K / Ctrl+K or the header button. */
+// ⌘K / ctrl-K opens it, or the header button
 export function SearchDialog() {
   const { isOpen, open, close, query, setQuery, results, loading } =
     useSearch();
@@ -13,8 +13,7 @@ export function SearchDialog() {
   const inputRef = useRef(null);
   const [active, setActive] = useState(0);
 
-  // Clamp rather than reset in an effect: when the query narrows the result set
-  // the highlight falls back into range without a cascading render.
+  // clamp instead of resetting in an effect, to avoid a cascading render
   const activeIndex = results.length ? Math.min(active, results.length - 1) : 0;
 
   useEffect(() => {

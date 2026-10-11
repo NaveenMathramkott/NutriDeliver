@@ -2,17 +2,7 @@ import { ExternalLink, ImageOff } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../lib/utils";
 
-/**
- * A screenshot of a real screen from the built application.
- *
- * Rendered inside a device-style frame rather than as a bare image, because
- * these are full-page captures with a fixed dark UI. The frame gives them a
- * consistent crop and keeps the dark screenshots from bleeding into the page
- * background in light mode.
- *
- * `alt` is required — a screenshot is meaningless to a screen reader without a
- * description of what it shows, so it is not optional here.
- */
+// framed so full-page dark captures don't bleed into the light background
 export function Screenshot({
   src,
   alt,
@@ -27,7 +17,7 @@ export function Screenshot({
   return (
     <figure className={cn("my-7", className)}>
       <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-        {/* Chrome bar: purely decorative, so hidden from assistive tech. */}
+        {/* fake chrome bar, decorative so it's aria-hidden */}
         <div
           aria-hidden="true"
           className="flex items-center gap-1.5 border-b border-border bg-muted/50 px-3 py-2"

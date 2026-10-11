@@ -28,9 +28,7 @@ export default function App() {
             <main className="min-w-0 flex-1">
               <Routes>
                 <Route path="/" element={<Landing />} />
-                {/* A splat, not `:slug` — chapter slugs contain slashes
-                    themselves (e.g. "backend/cart-orders"), which a single
-                    path segment cannot match. */}
+                {/* splat, not :slug — slugs like "backend/cart-orders" won't match one segment */}
                 <Route path="/docs/*" element={<DocPage />} />
                 <Route path="*" element={<DocPage />} />
               </Routes>

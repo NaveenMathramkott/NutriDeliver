@@ -2,13 +2,7 @@ import { Callout } from "../callout";
 import { CodeBlock } from "../code-block";
 import { Diagram, PropertyTable, Split, Step, Steps } from "../primitives";
 
-/**
- * Backend infrastructure chapters plus the shared mobile client foundation.
- *
- * Realtime, background work, analytics, testing, and documentation make up the
- * parts of the API that are not a single request-response handler. The final
- * two components cover the foundation all three Expo apps build on.
- */
+// realtime, jobs, analytics, testing, docs, plus the shared Expo client setup.
 
 export function BackendRealtime() {
   return (

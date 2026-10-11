@@ -17,7 +17,6 @@ function ChapterFallback() {
   );
 }
 
-/** Renders the body of the page identified by `slug`. */
 export function DocsContent({ slug }) {
   const Page = lazyPages[slug];
   if (!Page) return null;

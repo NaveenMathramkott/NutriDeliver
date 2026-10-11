@@ -2,9 +2,12 @@ import { useEffect } from "react";
 import {
   ArrowRight,
   Boxes,
+  Clock,
   CreditCard,
+  Info,
   Radio,
   Smartphone,
+  Sparkles,
   Truck,
   Utensils,
 } from "lucide-react";
@@ -46,13 +49,51 @@ const HIGHLIGHTS = [
     title: "Real domain logic",
     body: "Delivery radius, minimum orders, discount scoping, auto-cancel timers, and operating-hours synchronisation.",
   },
+  {
+    icon: Sparkles,
+    title: "AI, where it earns its place",
+    body: "Nutrition-aware recommendations, menu enrichment, ETA forecasting, and grounded support chat — each with a deterministic fallback and a cost ceiling.",
+  },
+];
+
+const AI_FEATURES = [
+  {
+    icon: Sparkles,
+    title: "Where AI belongs",
+    href: "/docs/ai/integration",
+    body: "Good fits, bad fits, a provider-agnostic client, and the prompt-injection rules that decide whether it is safe at all.",
+  },
+  {
+    icon: Utensils,
+    title: "Recommendations",
+    href: "/docs/ai/recommendations",
+    body: "MongoDB hard-filters allergies and dietary tags. The model only explains the result — it can never invent a dish.",
+  },
+  {
+    icon: Boxes,
+    title: "Menu enrichment",
+    href: "/docs/ai/menu-enrichment",
+    body: "Turns one line of description into calories, macros, and dietary tags. Fixes the platform’s weakest data.",
+  },
+  {
+    icon: Clock,
+    title: "Forecasting",
+    href: "/docs/ai/forecasting",
+    body: "Predicts delivery times and per-zone demand, after a historical-median baseline the model has to beat.",
+  },
+  {
+    icon: Radio,
+    title: "Support agent",
+    href: "/docs/ai/support",
+    body: "Answers grounded in real order data, with tool calls instead of database access and escalation to a human.",
+  },
 ];
 
 const STATS = [
   { value: "4", label: "Applications" },
   { value: "10", label: "Data models" },
   { value: "130+", label: "API endpoints" },
-  { value: "8", label: "Order states" },
+  { value: "42", label: "Chapters" },
 ];
 
 export function Landing() {
@@ -64,7 +105,7 @@ export function Landing() {
   return (
     <div>
       <section className="relative overflow-hidden border-b border-border">
-        {/* Ambient brand glow, kept behind content and non-interactive. */}
+        {/* soft glow behind the hero */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[42rem] -translate-x-1/2 rounded-full bg-brand/10 blur-3xl"
@@ -82,14 +123,16 @@ export function Landing() {
 
           <h1 className="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-5xl">
             Build a production-grade{" "}
-            <span className="text-brand">food delivery platform</span> from an
-            empty folder
+            <span className="text-brand"> AI food delivery platform</span> from
+            an empty folder
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground text-pretty">
             The complete, uncut walkthrough of NutriDeliver — four applications,
             one API, from architecture decisions to a deployed platform taking
-            real money. Every code sample is the code that actually ships.
+            real money. Every code sample is the code that actually ships,
+            including where AI genuinely helps and where it quietly makes things
+            worse.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -148,6 +191,72 @@ export function Landing() {
               </p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
+              <Sparkles size={12} className="text-brand" />
+              AI integration
+            </span>
+            <h2 className="mt-5 text-2xl font-bold tracking-tight sm:text-3xl">
+              Where AI helps a food delivery app — and where it doesn&rsquo;t
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Five chapters on adding AI without inheriting AI&rsquo;s problems:
+              cost ceilings, latency budgets, deterministic fallbacks, and the
+              places a model is simply the wrong tool.
+            </p>
+          </div>
+
+          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-5">
+            {AI_FEATURES.map((item) => (
+              <Link
+                key={item.title}
+                to={item.href}
+                className="group bg-card p-6 transition-colors hover:bg-accent/40"
+              >
+                <div className="flex items-center gap-2">
+                  <item.icon size={16} className="text-brand" />
+                  <h3 className="font-semibold">{item.title}</h3>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {item.body}
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-brand">
+                  Read the chapter
+                  <ArrowRight
+                    size={12}
+                    className="transition-transform group-hover:translate-x-0.5"
+                  />
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-10 rounded-xl border border-border bg-card p-6">
+            <div className="flex items-start gap-3">
+              <Info
+                size={17}
+                className="mt-0.5 shrink-0 text-muted-foreground"
+              />
+              <div className="text-sm leading-relaxed">
+                <p className="m-0 font-semibold">
+                  The rule these chapters follow
+                </p>
+                <p className="mt-1.5 text-muted-foreground">
+                  A calorie goal from height and weight is a formula, not a
+                  prompt — an LLM there is slower, non-deterministic, and costs
+                  money. Every feature in this section has a deterministic
+                  fallback that ships when the model is unavailable, and a model
+                  that must beat a measured baseline before it is allowed to
+                  replace one.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

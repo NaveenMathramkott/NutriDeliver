@@ -8,19 +8,7 @@ import { Toc } from "../layout/toc";
 import { DocsContent } from "./docs-content";
 import { ErrorBoundary } from "./error-boundary";
 
-/**
- * Reads the chapter's headings straight out of the rendered DOM.
- *
- * Scanning the DOM rather than the React tree means the table of contents works
- * identically for eagerly-loaded and code-split chapters — there is no second
- * list of headings to maintain, and a heading shows up in the nav the moment it
- * is written.
- *
- * IDs are assigned here (rather than authored on each `<h2>`) so chapters stay
- * free of presentation detail and new headings cannot be forgotten. Chapters
- * are code-split, so the body usually lands after this effect first runs — a
- * MutationObserver picks it up rather than a guessed delay.
- */
+// scan the rendered dom so split and eager chapters behave alike
 function useHeadings(containerRef, slug) {
   const [headings, setHeadings] = useState([]);
 
@@ -40,7 +28,7 @@ function useHeadings(containerRef, slug) {
               .trim()
               .replace(/\s+/g, "-") || "section";
 
-          // Identical headings ("Setup" in two sections) must not collide.
+          // "setup" appears in two sections, so ids need a suffix
           let id = base;
           let n = 2;
           while (container.querySelector(`#${CSS.escape(id)}`))
@@ -70,10 +58,9 @@ function useHeadings(containerRef, slug) {
   return headings;
 }
 
-/** Render a single documentation page: body, right-hand TOC, and prev/next paging. */
+// body, toc and prev/next pager
 export function DocPage() {
-  // The route is a splat (`/docs/*`), so the chapter slug — which itself
-  // contains slashes, e.g. "backend/cart-orders" — arrives under `*`.
+  // splat route, so slugs containing slashes arrive under `*`
   const params = useParams();
   const slug = params["*"] ?? "";
   const page = getPage(slug);
@@ -81,7 +68,7 @@ export function DocPage() {
   const contentRef = useRef(null);
   const headings = useHeadings(contentRef, slug);
 
-  // Reset scroll on navigation; the browser otherwise restores the old offset.
+  // browser restores the old offset otherwise
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
