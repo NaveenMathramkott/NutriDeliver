@@ -25,6 +25,7 @@ export const adminsApi = {
   async create(data: {
     email: string;
     name: string;
+    password?: string;
     role: string;
     permissions: string[];
   }) {

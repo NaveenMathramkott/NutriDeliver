@@ -36,6 +36,12 @@ import {
 const app = express();
 connectDB();
 
+// Disable ETag generation on API responses.
+// Express hashes every JSON body into an ETag; when a client replays the
+// If-None-Match header (browser/axios cache), the server replies 304 with an
+// EMPTY body, which breaks clients that always parse a JSON payload.
+app.set("etag", false);
+
 // Security Middleware
 app.use(helmet());
 app.use(
@@ -74,18 +80,22 @@ app.use("/api/offers", offerRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 // Swagger Documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'NutriDeliver API Documentation',
-  customfavIcon: '/favicon.ico',
-  swaggerOptions: {
-    persistAuthorization: true,
-    displayRequestDuration: true,
-    filter: true,
-    showExtensions: true,
-    showCommonExtensions: true,
-  }
-}));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "NutriDeliver API Documentation",
+    customfavIcon: "/favicon.ico",
+    swaggerOptions: {
+      persistAuthorization: true,
+      displayRequestDuration: true,
+      filter: true,
+      showExtensions: true,
+      showCommonExtensions: true,
+    },
+  }),
+);
 
 // Serve swagger spec as JSON
 app.get("/api-docs.json", (req, res) => {

@@ -26,6 +26,11 @@ export const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 400 };
   }
 
+  // Malformed JSON body from express.json()
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    error = { message: "Malformed JSON in request body", statusCode: 400 };
+  }
+
   // JWT errors
   if (err.name === "JsonWebTokenError") {
     const message = "Invalid token";
@@ -37,7 +42,10 @@ export const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 401 };
   }
 
-  res.status(error.statusCode || 500).json({
+  // Respect a status carried by the error itself (e.g. from notFound or thrown HttpErrors)
+  const statusCode = error.statusCode || err.statusCode || err.status || 500;
+
+  res.status(statusCode).json({
     success: false,
     message: error.message || "Server Error",
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
@@ -56,6 +64,6 @@ export const notFound = (req, res, next) => {
   // Create error for non-existent routes
   // Pass to errorHandler middleware
   const error = new Error(`Not found - ${req.originalUrl}`);
-  res.status(404);
+  error.statusCode = 404;
   next(error);
 };

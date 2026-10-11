@@ -1,9 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { authApi } from "@/services/api/auth";
+import { clearToken, getToken, setToken } from "@/services/tokenStorage";
+import { clearPersistedAuth } from "@/store/persistence";
 import type { User } from "@/types";
 
-interface AuthState {
+export interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -17,24 +19,31 @@ const initialState: AuthState = {
   error: null,
 };
 
-export const refreshUser = createAsyncThunk(
-  "auth/refreshUser",
-  async (_, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem("admin_token");
-      if (!token) {
-        return null;
-      }
-      const response = await authApi.getMe();
-      if (response.success && response.data) {
-        return response.data;
-      }
-      return null;
-    } catch {
+/**
+ * Restores the session on app boot by validating the stored token against
+ * `/auth/me`. The cached user is kept until this resolves, so the UI does not
+ * flash. On failure the session is cleared.
+ */
+export const refreshUser = createAsyncThunk("auth/refreshUser", async () => {
+  if (!getToken()) {
+    return null;
+  }
+
+  try {
+    const response = await authApi.getMe();
+    if (!response.success || !response.data) {
+      clearToken();
+      clearPersistedAuth();
       return null;
     }
-  },
-);
+    // The endpoint nests the user under `data.user`.
+    return (response.data.user ?? response.data) as User;
+  } catch {
+    // A network failure shouldn't log the admin out; the token stays valid
+    // and the next reload will retry.
+    return null;
+  }
+});
 
 export const loginUser = createAsyncThunk(
   "auth/login",
@@ -47,19 +56,27 @@ export const loginUser = createAsyncThunk(
         credentials.email,
         credentials.password,
       );
-      if (response.success && response.data) {
-        localStorage.setItem("admin_token", response.data.token);
-        return response.data.user;
+      if (response.success && response.data?.token) {
+        setToken(response.data.token);
+        return response.data.user as User;
       }
       return rejectWithValue(response.message || "Login failed");
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Login failed");
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Login failed",
+      );
     }
   },
 );
 
 export const logoutUser = createAsyncThunk("auth/logout", async () => {
-  localStorage.removeItem("admin_token");
+  try {
+    await authApi.logout();
+  } catch {
+    // Best effort; the local session is cleared regardless.
+  }
+  clearToken();
+  clearPersistedAuth();
   return null;
 });
 
@@ -74,6 +91,13 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
     },
+    /** Wipes the in-memory session, e.g. after a 401 on any request. */
+    clearSession: (state) => {
+      state.user = null;
+      state.isAuthenticated = false;
+      state.isLoading = false;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -82,13 +106,18 @@ const authSlice = createSlice({
       })
       .addCase(refreshUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload;
-        state.isAuthenticated = !!action.payload;
+        // Keep the cached user when /auth/me fails due to connectivity.
+        if (action.payload) {
+          state.user = action.payload;
+          state.isAuthenticated = true;
+        } else if (!getToken()) {
+          state.user = null;
+          state.isAuthenticated = false;
+        }
+        state.error = null;
       })
       .addCase(refreshUser.rejected, (state) => {
         state.isLoading = false;
-        state.user = null;
-        state.isAuthenticated = false;
       })
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
@@ -102,14 +131,20 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
+        state.isAuthenticated = false;
         state.error = action.payload as string;
+      })
+      .addCase(logoutUser.pending, (state) => {
+        state.isLoading = true;
       })
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
         state.isAuthenticated = false;
+        state.isLoading = false;
+        state.error = null;
       });
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, clearSession } = authSlice.actions;
 export default authSlice.reducer;

@@ -7,7 +7,7 @@ import { generateToken, generateRefreshToken } from "../utils/generateToken.js";
 // Generate JWT Token
 const generateAuthToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || "fallback_secret", {
-    expiresIn: process.env.JWT_EXPIRE || "15m",
+    expiresIn: process.env.JWT_EXPIRE || "14days",
   });
 };
 

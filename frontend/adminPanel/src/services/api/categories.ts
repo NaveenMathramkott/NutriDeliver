@@ -1,15 +1,27 @@
-import type { ApiResponse, PaginatedResponse } from "../../types";
+import type { ApiResponse, Category, Pagination } from "../../types";
 import { apiClient } from "./client";
 
+export interface CategoriesResponse {
+  categories: Category[];
+  pagination: Pagination;
+}
+
 export const categoriesApi = {
-  async getAll() {
-    const response =
-      await apiClient.get<ApiResponse<any[]>>("/admin/categories");
+  async getAll(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    isActive?: boolean;
+  }) {
+    const response = await apiClient.get<ApiResponse<CategoriesResponse>>(
+      "/admin/categories",
+      { params },
+    );
     return response.data;
   },
 
   async create(data: { name: string; description?: string; image?: string }) {
-    const response = await apiClient.post<ApiResponse<any>>(
+    const response = await apiClient.post<ApiResponse<{ category: Category }>>(
       "/admin/categories",
       data,
     );
@@ -25,7 +37,7 @@ export const categoriesApi = {
       isActive?: boolean;
     },
   ) {
-    const response = await apiClient.put<ApiResponse<any>>(
+    const response = await apiClient.put<ApiResponse<{ category: Category }>>(
       `/admin/categories/${id}`,
       data,
     );
@@ -33,7 +45,7 @@ export const categoriesApi = {
   },
 
   async delete(id: string) {
-    const response = await apiClient.delete<ApiResponse<any>>(
+    const response = await apiClient.delete<ApiResponse<Record<string, never>>>(
       `/admin/categories/${id}`,
     );
     return response.data;

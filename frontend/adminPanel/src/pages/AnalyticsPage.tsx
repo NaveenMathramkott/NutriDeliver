@@ -3,33 +3,28 @@
 import React, { useEffect, useState } from "react";
 import {
   BarChart3,
-  TrendingUp,
   Users,
   DollarSign,
   Store,
   Truck,
   Package,
-  Calendar,
-  Download,
-  Filter,
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader, StatCard } from "@/components/common";
+import { SelectField } from "@/components/form";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { format, subDays } from "date-fns";
-import { cn } from "@/lib/utils";
 import type { PlatformAnalytics, SalesAnalytics, UserAnalytics } from "@/types";
+
+const DATE_RANGE_OPTIONS = [
+  { value: "7d", label: "Last 7 Days" },
+  { value: "30d", label: "Last 30 Days" },
+  { value: "90d", label: "Last 90 Days" },
+  { value: "1y", label: "Last Year" },
+];
 
 export function AnalyticsPage() {
   const [platformAnalytics, setPlatformAnalytics] =
@@ -86,160 +81,86 @@ export function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-          <p className="text-muted-foreground">
-            Platform performance and insights
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select value={dateRange} onValueChange={handleDateRangeChange}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Date Range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 Days</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="90d">Last 90 Days</SelectItem>
-              <SelectItem value="1y">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={fetchAnalytics}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Analytics"
+        description="Platform performance and insights"
+        action={
+          <>
+            <SelectField
+              id="analytics-date-range"
+              label="Date Range"
+              hideLabel
+              className="w-[180px]"
+              options={DATE_RANGE_OPTIONS}
+              value={dateRange}
+              onValueChange={handleDateRangeChange}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={fetchAnalytics}
+              aria-label="Refresh analytics"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </>
+        }
+      />
 
       {platformAnalytics && !isLoading && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Users
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {platformAnalytics.analytics.users.total.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                  <Users className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-green-600">
-                +{platformAnalytics.analytics.users.new} this month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Restaurants
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {platformAnalytics.analytics.restaurants.total.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-                  <Store className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-green-600">
-                {platformAnalytics.analytics.restaurants.active} active
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Riders
-                  </p>
-                  <p className="text-2xl font-bold">N/A</p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
-                  <Truck className="h-6 w-6 text-orange-600" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Data not available
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Orders
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {platformAnalytics.analytics.orders.total.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100">
-                  <Package className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-green-600">
-                {platformAnalytics.analytics.orders.recent} recent
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Revenue
-                  </p>
-                  <p className="text-2xl font-bold">
-                    $
-                    {platformAnalytics.analytics.revenue.totalRevenue.toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100">
-                  <DollarSign className="h-6 w-6 text-emerald-600" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm text-green-600">
-                $
-                {platformAnalytics.analytics.revenue.recentRevenue.toLocaleString()}{" "}
-                recent
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Avg Order Value
-                  </p>
-                  <p className="text-2xl font-bold">
-                    $
-                    {platformAnalytics.analytics.orders.total > 0
-                      ? (
-                          platformAnalytics.analytics.revenue.totalRevenue /
-                          platformAnalytics.analytics.orders.total
-                        ).toFixed(2)
-                      : "0.00"}
-                  </p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-100">
-                  <BarChart3 className="h-6 w-6 text-cyan-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <StatCard
+            label="Total Users"
+            value={platformAnalytics.analytics.users.total.toLocaleString()}
+            icon={<Users className="h-5 w-5" />}
+            tone="bg-primary/10 text-primary"
+            hint={`+${platformAnalytics.analytics.users.new} this month`}
+            hintTone="text-fresh-600"
+          />
+          <StatCard
+            label="Total Restaurants"
+            value={platformAnalytics.analytics.restaurants.total.toLocaleString()}
+            icon={<Store className="h-5 w-5" />}
+            tone="bg-fresh-100 text-fresh-600"
+            hint={`${platformAnalytics.analytics.restaurants.active} active`}
+            hintTone="text-fresh-600"
+          />
+          <StatCard
+            label="Total Riders"
+            value="N/A"
+            icon={<Truck className="h-5 w-5" />}
+            tone="bg-nutrideliver-100 text-nutrideliver-600"
+            hint="Data not available"
+          />
+          <StatCard
+            label="Total Orders"
+            value={platformAnalytics.analytics.orders.total.toLocaleString()}
+            icon={<Package className="h-5 w-5" />}
+            tone="bg-primary/10 text-primary"
+            hint={`${platformAnalytics.analytics.orders.recent} recent`}
+            hintTone="text-fresh-600"
+          />
+          <StatCard
+            label="Total Revenue"
+            value={`$${platformAnalytics.analytics.revenue.totalRevenue.toLocaleString()}`}
+            icon={<DollarSign className="h-5 w-5" />}
+            tone="bg-fresh-100 text-fresh-600"
+            hint={`$${platformAnalytics.analytics.revenue.recentRevenue.toLocaleString()} recent`}
+            hintTone="text-fresh-600"
+          />
+          <StatCard
+            label="Avg Order Value"
+            value={`$${
+              platformAnalytics.analytics.orders.total > 0
+                ? (
+                    platformAnalytics.analytics.revenue.totalRevenue /
+                    platformAnalytics.analytics.orders.total
+                  ).toFixed(2)
+                : "0.00"
+            }`}
+            icon={<BarChart3 className="h-5 w-5" />}
+            tone="bg-primary/10 text-primary"
+          />
         </div>
       )}
 

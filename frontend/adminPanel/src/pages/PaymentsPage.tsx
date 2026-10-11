@@ -1,53 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Search,
   MoreVertical,
-  CreditCard,
   DollarSign,
   RotateCcw,
   Eye,
   AlertCircle,
   CheckCircle2,
-  Filter,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,31 +21,35 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  PageHeader,
+  FilterBar,
+  TablePagination,
+  TableState,
+  StatCard,
+  DetailDialog,
+  DetailGrid,
+  DetailItem,
+  DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  TableCell,
+  TableHead,
+} from "@/components/common";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import type { Order, PaymentStatus, PaymentMethod } from "@/types";
+import type { Order, PaymentMethod } from "@/types";
+import {
+  RefundDialog,
+  PAYMENT_STATUS_OPTIONS,
+  PAYMENT_METHOD_OPTIONS,
+  PAYMENT_STATUS_COLORS,
+  type RefundFormValues,
+} from "@/features/payments";
 
-const statusColors: Record<
-  PaymentStatus,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  pending: "warning",
-  paid: "success",
-  failed: "destructive",
-  refunded: "secondary",
-};
+const PAGE_SIZE = 10;
 
-const methodColors: Record<
+const METHOD_COLORS: Record<
   PaymentMethod,
   "default" | "success" | "warning" | "destructive" | "secondary"
 > = {
@@ -89,10 +58,19 @@ const methodColors: Record<
   digital_wallet: "success",
 };
 
+function customerName(payment: Order): string {
+  return typeof payment.userId === "object" && payment.userId.profile
+    ? `${payment.userId.profile.firstName} ${payment.userId.profile.lastName}`
+    : "Unknown";
+}
+
+function customerEmail(payment: Order): string {
+  return typeof payment.userId === "object" ? (payment.userId.email ?? "") : "";
+}
+
 export function PaymentsPage() {
   const [payments, setPayments] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [methodFilter, setMethodFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,15 +79,18 @@ export function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
-  const [refundAmount, setRefundAmount] = useState("");
-  const [refundReason, setRefundReason] = useState("");
+  const [isRefunding, setIsRefunding] = useState(false);
+  const [refundValues, setRefundValues] = useState<RefundFormValues>({
+    amount: 0,
+    reason: "",
+  });
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await api.getPayments({
         page: currentPage,
-        limit: 10,
+        limit: PAGE_SIZE,
         status: statusFilter,
         method: methodFilter,
       });
@@ -132,17 +113,11 @@ export function PaymentsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, statusFilter, methodFilter]);
 
   useEffect(() => {
     fetchPayments();
-  }, [currentPage, searchQuery, statusFilter, methodFilter]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchPayments();
-  };
+  }, [fetchPayments]);
 
   const openDetailDialog = (payment: Order) => {
     setSelectedPayment(payment);
@@ -151,18 +126,19 @@ export function PaymentsPage() {
 
   const openRefundDialog = (payment: Order) => {
     setSelectedPayment(payment);
-    setRefundAmount(payment.grandTotal.toString());
-    setRefundReason("");
+    setRefundValues({ amount: payment.grandTotal, reason: "" });
     setIsRefundDialogOpen(true);
   };
 
-  const handleRefund = async () => {
-    if (!selectedPayment || !refundAmount || !refundReason) return;
+  const handleRefund = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedPayment) return;
+    setIsRefunding(true);
     try {
       const response = await api.refundPayment(
         selectedPayment._id,
-        parseFloat(refundAmount),
-        refundReason,
+        refundValues.amount,
+        refundValues.reason,
       );
       if (response.success) {
         toast({
@@ -170,446 +146,260 @@ export function PaymentsPage() {
           description: "Refund processed successfully",
           variant: "success",
         });
-        fetchPayments();
         setIsRefundDialogOpen(false);
+        fetchPayments();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to process refund",
         variant: "destructive",
       });
+    } finally {
+      setIsRefunding(false);
     }
   };
 
+  const sumByStatus = (status: string) =>
+    payments
+      .filter((p) => p.paymentStatus === status)
+      .reduce((sum, p) => sum + p.grandTotal, 0);
+
+  const paidCount = payments.filter((p) => p.paymentStatus === "paid").length;
+  const successRate =
+    payments.length > 0
+      ? ((paidCount / payments.length) * 100).toFixed(1)
+      : "0";
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Payment Management
-          </h1>
-          <p className="text-muted-foreground">
-            Monitor and manage all payments
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Payment Management"
+        description="Monitor and manage all payments"
+      />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">
-                  $
-                  {payments
-                    .filter((p) => p.paymentStatus === "paid")
-                    .reduce((sum, p) => sum + p.grandTotal, 0)
-                    .toFixed(2)}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-green-600">All time</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Pending Payments
-                </p>
-                <p className="text-2xl font-bold">
-                  $
-                  {payments
-                    .filter((p) => p.paymentStatus === "pending")
-                    .reduce((sum, p) => sum + p.grandTotal, 0)
-                    .toFixed(2)}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100">
-                <AlertCircle className="h-6 w-6 text-yellow-600" />
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-yellow-600">
-              {payments.filter((p) => p.paymentStatus === "pending").length}{" "}
-              pending
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Refunds</p>
-                <p className="text-2xl font-bold">
-                  $
-                  {payments
-                    .filter((p) => p.paymentStatus === "refunded")
-                    .reduce((sum, p) => sum + p.grandTotal, 0)
-                    .toFixed(2)}
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
-                <RotateCcw className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-red-600">
-              {payments.filter((p) => p.paymentStatus === "refunded").length}{" "}
-              refunded
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Success Rate</p>
-                <p className="text-2xl font-bold">
-                  {payments.length > 0
-                    ? (
-                        (payments.filter((p) => p.paymentStatus === "paid")
-                          .length /
-                          payments.length) *
-                        100
-                      ).toFixed(1)
-                    : "100"}
-                  %
-                </p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                <CheckCircle2 className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-            <p className="mt-2 text-sm text-blue-600">All time</p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total Revenue"
+          value={`$${sumByStatus("paid").toFixed(2)}`}
+          icon={<DollarSign className="h-5 w-5" />}
+          tone="bg-fresh-100 text-fresh-600"
+          hint="All time"
+          hintTone="text-fresh-600"
+        />
+        <StatCard
+          label="Pending Payments"
+          value={`$${sumByStatus("pending").toFixed(2)}`}
+          icon={<AlertCircle className="h-5 w-5" />}
+          tone="bg-nutrideliver-100 text-nutrideliver-600"
+          hint={`${payments.filter((p) => p.paymentStatus === "pending").length} pending`}
+          hintTone="text-nutrideliver-600"
+        />
+        <StatCard
+          label="Refunds"
+          value={`$${sumByStatus("refunded").toFixed(2)}`}
+          icon={<RotateCcw className="h-5 w-5" />}
+          tone="bg-destructive/10 text-destructive"
+          hint={`${payments.filter((p) => p.paymentStatus === "refunded").length} refunded`}
+          hintTone="text-destructive"
+        />
+        <StatCard
+          label="Success Rate"
+          value={`${successRate}%`}
+          icon={<CheckCircle2 className="h-5 w-5" />}
+          tone="bg-primary/10 text-primary"
+          hint={`${paidCount} of ${payments.length} paid`}
+        />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Payments</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="mb-4 flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search payments..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+        <CardContent className="space-y-4">
+          <FilterBar
+            showSearch={false}
+            searchValue=""
+            onSearchChange={() => {}}
+            onSearch={() => setCurrentPage(1)}
+            filters={[
+              {
+                key: "status",
+                label: "All Statuses",
+                value: statusFilter,
+                onValueChange: setStatusFilter,
+                options: PAYMENT_STATUS_OPTIONS,
+              },
+              {
+                key: "method",
+                label: "All Methods",
+                value: methodFilter,
+                onValueChange: setMethodFilter,
+                options: PAYMENT_METHOD_OPTIONS,
+              },
+            ]}
+          />
+
+          <DataTable>
+            <DataTableHead>
+              <TableHead>Order</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Method</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </DataTableHead>
+            <DataTableBody>
+              <TableState
+                isLoading={isLoading}
+                isEmpty={payments.length === 0}
+                colSpan={7}
+                emptyMessage="No payments found"
               />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="refunded">Refunded</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={methodFilter} onValueChange={setMethodFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Methods" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Methods</SelectItem>
-                <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="digital_wallet">Digital Wallet</SelectItem>
-              </SelectContent>
-            </Select>
-          </form>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
-                      <div className="flex justify-center">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : payments.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-8 text-muted-foreground"
+              {payments.map((payment) => (
+                <DataTableRow key={payment._id}>
+                  <TableCell>
+                    <p className="font-mono text-sm">{payment.orderId}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium">{customerName(payment)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {customerEmail(payment)}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium">
+                      ${payment.grandTotal?.toFixed(2)}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={METHOD_COLORS[payment.paymentMethod]}
+                      className="capitalize"
                     >
-                      No payments found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  payments.map((payment) => (
-                    <TableRow key={payment._id}>
-                      <TableCell>
-                        <p className="font-mono text-sm">{payment.orderId}</p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">
-                          {typeof payment.userId === "object" &&
-                          payment.userId.profile
-                            ? `${payment.userId.profile.firstName} ${payment.userId.profile.lastName}`
-                            : "Unknown"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {typeof payment.userId === "object"
-                            ? payment.userId.email
-                            : ""}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">
-                          ${payment.grandTotal?.toFixed(2)}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            methodColors[payment.paymentMethod] || "default"
-                          }
-                          className="capitalize"
+                      {payment.paymentMethod.replace("_", " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        PAYMENT_STATUS_COLORS[payment.paymentStatus] ||
+                        "default"
+                      }
+                      className="capitalize"
+                    >
+                      {payment.paymentStatus}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-muted-foreground">
+                      {format(
+                        new Date(payment.createdAt),
+                        "MMM dd, yyyy HH:mm",
+                      )}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => openDetailDialog(payment)}
                         >
-                          {payment.paymentMethod.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            statusColors[payment.paymentStatus] || "default"
-                          }
-                          className="capitalize"
-                        >
-                          {payment.paymentStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {format(
-                            new Date(payment.createdAt),
-                            "MMM dd, yyyy HH:mm",
-                          )}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <Eye className="h-4 w-4" />
+                          View Details
+                        </DropdownMenuItem>
+                        {payment.paymentStatus === "paid" && (
+                          <>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => openDetailDialog(payment)}
+                              onClick={() => openRefundDialog(payment)}
                             >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
+                              <RotateCcw className="h-4 w-4" />
+                              Refund
                             </DropdownMenuItem>
-                            {payment.paymentStatus === "paid" && (
-                              <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => openRefundDialog(payment)}
-                                >
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Refund
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
 
-          {totalPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  />
-                </PaginationItem>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) pageNum = i + 1;
-                  else if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2)
-                    pageNum = totalPages - 4 + i;
-                  else pageNum = currentPage - 2 + i;
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        isActive={currentPage === pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+          <p className="text-sm text-muted-foreground">{total} payments</p>
         </CardContent>
       </Card>
 
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Payment Details</DialogTitle>
-            <DialogDescription>
-              Order #{selectedPayment?.orderId}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPayment && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Order</p>
-                  <p className="font-medium">{selectedPayment.orderId}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Customer</p>
-                  <p className="font-medium">
-                    {typeof selectedPayment.userId === "object" &&
-                    selectedPayment.userId.profile
-                      ? `${selectedPayment.userId.profile.firstName} ${selectedPayment.userId.profile.lastName}`
-                      : "Unknown"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Amount</p>
-                  <p className="font-medium text-xl">
-                    ${selectedPayment.grandTotal?.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Method</p>
-                  <p className="font-medium capitalize">
-                    {selectedPayment.paymentMethod.replace("_", " ")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Status</p>
-                  <Badge
-                    variant={
-                      statusColors[selectedPayment.paymentStatus] || "default"
-                    }
-                    className="capitalize"
-                  >
-                    {selectedPayment.paymentStatus}
-                  </Badge>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">
-                    {format(
-                      new Date(selectedPayment.createdAt),
-                      "MMM dd, yyyy HH:mm",
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDetailDialogOpen(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DetailDialog
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+        title="Payment Details"
+        description={`Order #${selectedPayment?.orderId}`}
+        maxWidth="sm:max-w-lg"
+      >
+        {selectedPayment && (
+          <DetailGrid>
+            <DetailItem label="Order">{selectedPayment.orderId}</DetailItem>
+            <DetailItem label="Customer">
+              {customerName(selectedPayment)}
+            </DetailItem>
+            <DetailItem label="Amount">
+              <span className="text-lg">
+                ${selectedPayment.grandTotal?.toFixed(2)}
+              </span>
+            </DetailItem>
+            <DetailItem label="Method">
+              <Badge
+                variant={METHOD_COLORS[selectedPayment.paymentMethod]}
+                className="capitalize"
+              >
+                {selectedPayment.paymentMethod.replace("_", " ")}
+              </Badge>
+            </DetailItem>
+            <DetailItem label="Status">
+              <Badge
+                variant={
+                  PAYMENT_STATUS_COLORS[selectedPayment.paymentStatus] ||
+                  "default"
+                }
+                className="capitalize"
+              >
+                {selectedPayment.paymentStatus}
+              </Badge>
+            </DetailItem>
+            <DetailItem label="Date">
+              {format(
+                new Date(selectedPayment.createdAt),
+                "MMM dd, yyyy HH:mm",
+              )}
+            </DetailItem>
+          </DetailGrid>
+        )}
+      </DetailDialog>
 
-      <Dialog open={isRefundDialogOpen} onOpenChange={setIsRefundDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Process Refund</DialogTitle>
-            <DialogDescription>
-              Order #{selectedPayment?.orderId}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="refundAmount">Refund Amount *</Label>
-              <Input
-                id="refundAmount"
-                type="number"
-                step="0.01"
-                value={refundAmount}
-                onChange={(e) => setRefundAmount(e.target.value)}
-                placeholder="0.00"
-                required
-                max={selectedPayment?.grandTotal}
-              />
-              <p className="text-sm text-muted-foreground">
-                Max: ${selectedPayment?.grandTotal?.toFixed(2)}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="refundReason">Reason *</Label>
-              <Input
-                id="refundReason"
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-                placeholder="Reason for refund"
-                required
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRefundDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleRefund}>Process Refund</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RefundDialog
+        open={isRefundDialogOpen}
+        onOpenChange={setIsRefundDialogOpen}
+        orderId={selectedPayment?.orderId}
+        maxAmount={selectedPayment?.grandTotal ?? 0}
+        values={refundValues}
+        onValuesChange={setRefundValues}
+        onSubmit={handleRefund}
+        isSubmitting={isRefunding}
+      />
     </div>
   );
 }

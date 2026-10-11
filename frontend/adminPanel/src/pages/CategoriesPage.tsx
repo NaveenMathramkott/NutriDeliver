@@ -1,53 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  Search,
-  MoreVertical,
-  Plus,
-  Tag,
-  Edit,
-  Trash2,
-  CheckCircle2,
-  XCircle,
-  Image,
-} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { MoreVertical, Tag, Edit, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,19 +14,29 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  PageHeader,
+  FilterBar,
+  ConfirmDialog,
+  TablePagination,
+  TableFooterText,
+  TableState,
+  DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  TableCell,
+  TableHead,
+} from "@/components/common";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
 import type { Category } from "@/types";
+import {
+  CategoryFormDialog,
+  emptyCategoryForm,
+  type CategoryFormValues,
+} from "@/features/categories";
+
+const PAGE_SIZE = 10;
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -84,33 +52,24 @@ export function CategoriesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    image: "",
-    isActive: true,
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formValues, setFormValues] =
+    useState<CategoryFormValues>(emptyCategoryForm);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await api.getCategories();
+      const response = await api.getCategories({
+        page: currentPage,
+        limit: PAGE_SIZE,
+        search: searchQuery || undefined,
+        isActive: statusFilter === "" ? undefined : statusFilter === "true",
+      });
       if (response.success && response.data) {
-        const categories = response.data as Category[];
-        let filtered = categories;
-        if (searchQuery) {
-          filtered = filtered.filter((c) =>
-            c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-          );
-        }
-        if (statusFilter) {
-          filtered = filtered.filter(
-            (c) => c.isActive === (statusFilter === "true"),
-          );
-        }
-        setTotal(filtered.length);
-        setTotalPages(Math.ceil(filtered.length / 10));
-        setCategories(filtered.slice((currentPage - 1) * 10, currentPage * 10));
+        const { categories, pagination } = response.data;
+        setCategories(categories);
+        setTotalPages(pagination.pages);
+        setTotal(pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -122,29 +81,23 @@ export function CategoriesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, statusFilter]);
 
   useEffect(() => {
     fetchCategories();
-  }, [currentPage, searchQuery, statusFilter]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchCategories();
-  };
+  }, [fetchCategories]);
 
   const openCreateDialog = () => {
     setIsEditing(false);
     setSelectedCategory(null);
-    setFormData({ name: "", description: "", image: "", isActive: true });
+    setFormValues(emptyCategoryForm);
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (category: Category) => {
     setIsEditing(true);
     setSelectedCategory(category);
-    setFormData({
+    setFormValues({
       name: category.name,
       description: category.description,
       image: category.image,
@@ -153,25 +106,25 @@ export function CategoriesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
-      let response;
-      if (isEditing && selectedCategory) {
-        response = await api.updateCategory(selectedCategory._id, formData);
-      } else {
-        response = await api.createCategory(formData);
-      }
+      const response =
+        isEditing && selectedCategory
+          ? await api.updateCategory(selectedCategory._id, formValues)
+          : await api.createCategory(formValues);
+
       if (response.success) {
         toast({
           title: "Success",
           description: isEditing ? "Category updated" : "Category created",
           variant: "success",
         });
-        fetchCategories();
         setIsDialogOpen(false);
+        fetchCategories();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: isEditing
@@ -179,6 +132,8 @@ export function CategoriesPage() {
           : "Failed to create category",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -192,10 +147,10 @@ export function CategoriesPage() {
           description: "Category deleted",
           variant: "success",
         });
-        fetchCategories();
         setIsDeleteDialogOpen(false);
+        fetchCategories();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete category",
@@ -206,287 +161,155 @@ export function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Category Management
-          </h1>
-          <p className="text-muted-foreground">Manage food categories</p>
-        </div>
-        <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Category
-        </Button>
-      </div>
+      <PageHeader
+        title="Category Management"
+        description="Manage food categories"
+        action={<Button onClick={openCreateDialog}>Add Category</Button>}
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>Categories</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="mb-4 flex gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search categories..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+        <CardContent className="space-y-4">
+          <FilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search categories..."
+            onSearch={() => setCurrentPage(1)}
+            filters={[
+              {
+                key: "status",
+                label: "All Statuses",
+                value: statusFilter,
+                onValueChange: setStatusFilter,
+                options: [
+                  { value: "", label: "All Statuses" },
+                  { value: "true", label: "Active" },
+                  { value: "false", label: "Inactive" },
+                ],
+              },
+            ]}
+          />
+
+          <DataTable>
+            <DataTableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Image</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </DataTableHead>
+            <DataTableBody>
+              <TableState
+                isLoading={isLoading}
+                isEmpty={categories.length === 0}
+                colSpan={5}
+                emptyMessage="No categories found"
               />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </form>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      <div className="flex justify-center">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              {categories.map((category) => (
+                <DataTableRow key={category._id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <Tag className="h-5 w-5 text-primary" />
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ) : categories.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No categories found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  categories.map((category) => (
-                    <TableRow key={category._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                            <Tag className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{category.name}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-sm text-muted-foreground max-w-[200px] truncate">
-                          {category.description || "No description"}
+                      <div>
+                        <p className="font-medium">{category.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Added{" "}
+                          {format(new Date(category.createdAt), "MMM dd, yyyy")}
                         </p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={category.isActive ? "success" : "secondary"}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <p className="max-w-[200px] truncate text-sm text-muted-foreground">
+                      {category.description || "No description"}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={category.isActive ? "success" : "secondary"}
+                    >
+                      {category.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {category.image ? (
+                      <img
+                        src={category.image}
+                        alt={category.name}
+                        className="h-10 w-10 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground">No image</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => openEditDialog(category)}
                         >
-                          {category.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {category.image ? (
-                          <img
-                            src={category.image}
-                            alt={category.name}
-                            className="h-10 w-10 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <span className="text-muted-foreground">
-                            No image
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => openEditDialog(category)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedCategory(category);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                              <span className="text-destructive">Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <span className="text-destructive">Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
 
-          {totalPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  />
-                </PaginationItem>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) pageNum = i + 1;
-                  else if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2)
-                    pageNum = totalPages - 4 + i;
-                  else pageNum = currentPage - 2 + i;
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        isActive={currentPage === pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+          <TableFooterText
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            total={total}
+            itemLabel="categories"
+          />
         </CardContent>
       </Card>
 
-      <AlertDialog
+      <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedCategory?.name}? This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete Category"
+        description={`Are you sure you want to delete ${selectedCategory?.name}? This action cannot be undone.`}
+        onConfirm={handleDelete}
+      />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {isEditing ? "Edit Category" : "Create Category"}
-            </DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Update category details"
-                : "Add a new food category"}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Category name"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Category description"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                value={formData.image}
-                onChange={(e) =>
-                  setFormData({ ...formData, image: e.target.value })
-                }
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData({ ...formData, isActive: e.target.checked })
-                }
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <Label htmlFor="isActive">Active</Label>
-            </div>
-          </form>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              form={undefined}
-              onClick={() => {
-                document.querySelector("form")?.requestSubmit();
-              }}
-            >
-              {isEditing ? "Update" : "Create"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CategoryFormDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        isEditing={isEditing}
+        values={formValues}
+        onValuesChange={setFormValues}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

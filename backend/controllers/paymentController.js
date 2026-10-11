@@ -1,8 +1,11 @@
-import Stripe from 'stripe';
-import Order from '../models/Order.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import Stripe from "stripe";
+import Order from "../models/Order.js";
+import Restaurant from "../models/Restaurant.js";
+import { asyncHandler } from "../middleware/errorHandler.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_...');
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || "sk_test_placeholder",
+);
 
 // @desc    Create payment intent
 // @route   POST /api/payments/create-intent
@@ -13,23 +16,23 @@ export const createPaymentIntent = asyncHandler(async (req, res) => {
   const order = await Order.findOne({
     _id: orderId,
     userId: req.user.id,
-    paymentStatus: 'pending'
+    paymentStatus: "pending",
   });
 
   if (!order) {
     return res.status(404).json({
       success: false,
-      message: 'Order not found or already processed'
+      message: "Order not found or already processed",
     });
   }
 
   // Create payment intent with Stripe
   const paymentIntent = await stripe.paymentIntents.create({
     amount: Math.round(order.grandTotal * 100), // Convert to cents
-    currency: 'usd',
+    currency: "usd",
     metadata: {
       orderId: order._id.toString(),
-      userId: req.user.id
+      userId: req.user.id,
     },
     automatic_payment_methods: {
       enabled: true,
@@ -40,8 +43,8 @@ export const createPaymentIntent = asyncHandler(async (req, res) => {
     success: true,
     data: {
       clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id
-    }
+      paymentIntentId: paymentIntent.id,
+    },
   });
 });
 
@@ -53,10 +56,10 @@ export const confirmPayment = asyncHandler(async (req, res) => {
 
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-  if (paymentIntent.status !== 'succeeded') {
+  if (paymentIntent.status !== "succeeded") {
     return res.status(400).json({
       success: false,
-      message: 'Payment not completed'
+      message: "Payment not completed",
     });
   }
 
@@ -64,28 +67,28 @@ export const confirmPayment = asyncHandler(async (req, res) => {
   const order = await Order.findOneAndUpdate(
     {
       _id: orderId,
-      userId: req.user.id
+      userId: req.user.id,
     },
     {
-      paymentStatus: 'paid',
-      status: 'confirmed'
+      paymentStatus: "paid",
+      status: "confirmed",
     },
-    { new: true }
+    { new: true },
   );
 
   if (!order) {
     return res.status(404).json({
       success: false,
-      message: 'Order not found'
+      message: "Order not found",
     });
   }
 
   res.json({
     success: true,
-    message: 'Payment confirmed successfully',
+    message: "Payment confirmed successfully",
     data: {
-      order
-    }
+      order,
+    },
   });
 });
 
@@ -99,17 +102,20 @@ export const processRefund = asyncHandler(async (req, res) => {
   if (!order) {
     return res.status(404).json({
       success: false,
-      message: 'Order not found'
+      message: "Order not found",
     });
   }
 
   // Check permissions
-  if (req.user.role === 'restaurant') {
+  if (req.user.role === "restaurant") {
     const restaurant = await Restaurant.findOne({ ownerId: req.user.id });
-    if (!restaurant || order.restaurantId.toString() !== restaurant._id.toString()) {
+    if (
+      !restaurant ||
+      order.restaurantId.toString() !== restaurant._id.toString()
+    ) {
       return res.status(403).json({
         success: false,
-        message: 'Not authorized to refund this order'
+        message: "Not authorized to refund this order",
       });
     }
   }
@@ -122,15 +128,15 @@ export const processRefund = asyncHandler(async (req, res) => {
   // });
 
   // For demo purposes, we'll just update the order status
-  order.paymentStatus = 'refunded';
+  order.paymentStatus = "refunded";
   await order.save();
 
   res.json({
     success: true,
-    message: 'Refund processed successfully',
+    message: "Refund processed successfully",
     data: {
-      order
-    }
+      order,
+    },
   });
 });
 
@@ -143,8 +149,8 @@ export const getPaymentMethods = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     data: {
-      paymentMethods: []
-    }
+      paymentMethods: [],
+    },
   });
 });
 
@@ -158,7 +164,7 @@ export const addPaymentMethod = asyncHandler(async (req, res) => {
   // For demo purposes, just return success
   res.json({
     success: true,
-    message: 'Payment method added successfully'
+    message: "Payment method added successfully",
   });
 });
 
@@ -172,7 +178,7 @@ export const removePaymentMethod = asyncHandler(async (req, res) => {
   // For demo purposes, just return success
   res.json({
     success: true,
-    message: 'Payment method removed successfully'
+    message: "Payment method removed successfully",
   });
 });
 
@@ -184,16 +190,16 @@ export const getPaymentHistory = asyncHandler(async (req, res) => {
 
   const orders = await Order.find({
     userId: req.user.id,
-    paymentStatus: 'paid'
+    paymentStatus: "paid",
   })
-    .select('orderId grandTotal paymentStatus createdAt')
+    .select("orderId grandTotal paymentStatus createdAt")
     .sort({ createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
   const total = await Order.countDocuments({
     userId: req.user.id,
-    paymentStatus: 'paid'
+    paymentStatus: "paid",
   });
 
   res.json({
@@ -203,8 +209,8 @@ export const getPaymentHistory = asyncHandler(async (req, res) => {
       pagination: {
         current: page,
         pages: Math.ceil(total / limit),
-        total
-      }
-    }
+        total,
+      },
+    },
   });
 });

@@ -17,32 +17,48 @@ http://localhost:5000/api
 // ─────────────────────────────────────────────
 // Enums / Unions
 // ─────────────────────────────────────────────
-type UserRole = 'user' | 'restaurant' | 'rider' | 'admin';
+type UserRole = "user" | "restaurant" | "rider" | "admin";
 
 type OrderStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'preparing'
-  | 'ready_for_pickup'
-  | 'pickedup'
-  | 'out_for_delivery'
-  | 'delivered'
-  | 'cancelled';
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "ready_for_pickup"
+  | "pickedup"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
 
-type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
-type PaymentMethod = 'card' | 'cash' | 'digital_wallet';
-type AddressType = 'home' | 'work' | 'other';
+type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+type PaymentMethod = "card" | "cash" | "digital_wallet";
+type AddressType = "home" | "work" | "other";
 
 type CuisineType =
-  | 'healthy' | 'salads' | 'protein' | 'vegan' | 'vegetarian'
-  | 'gluten-free' | 'keto' | 'mediterranean' | 'smoothies';
+  | "healthy"
+  | "salads"
+  | "protein"
+  | "vegan"
+  | "vegetarian"
+  | "gluten-free"
+  | "keto"
+  | "mediterranean"
+  | "smoothies";
 
 type DietaryTag =
-  | 'vegan' | 'vegetarian' | 'gluten-free' | 'dairy-free' | 'nut-free'
-  | 'low-carb' | 'high-protein' | 'keto' | 'paleo' | 'sugar-free'
-  | 'organic' | 'non-gmo';
+  | "vegan"
+  | "vegetarian"
+  | "gluten-free"
+  | "dairy-free"
+  | "nut-free"
+  | "low-carb"
+  | "high-protein"
+  | "keto"
+  | "paleo"
+  | "sugar-free"
+  | "organic"
+  | "non-gmo";
 
-type VehicleType = 'bicycle' | 'motorcycle' | 'car' | 'scooter';
+type VehicleType = "bicycle" | "motorcycle" | "car" | "scooter";
 
 // ─────────────────────────────────────────────
 // Response envelopes
@@ -104,7 +120,7 @@ interface User {
   notificationPreferences?: { email: boolean; push: boolean; sms: boolean };
   restaurantProfile?: {
     restaurantId: string;
-    roleInRestaurant: 'owner';
+    roleInRestaurant: "owner";
     permissions: string[];
   };
   riderProfile?: RiderProfile;
@@ -114,14 +130,20 @@ interface User {
   updatedAt: string;
 }
 
-interface Coordinates { lat: number; lng: number }
+interface Coordinates {
+  lat: number;
+  lng: number;
+}
 
 interface RiderProfile {
   vehicleType: VehicleType;
   vehicleNumber: string;
   licenseNumber: string;
   isOnline: boolean;
-  availabilityStatus: { status: 'available' | 'busy' | 'offline'; lastUpdated?: string };
+  availabilityStatus: {
+    status: "available" | "busy" | "offline";
+    lastUpdated?: string;
+  };
   currentLocation?: Coordinates & { lastUpdated: string };
   documents?: { type: string; url: string; uploadedAt: string }[];
   earnings: {
@@ -167,7 +189,9 @@ interface Restaurant {
 
 interface FoodItem {
   _id: string;
-  restaurantId: string | Pick<Restaurant, '_id' | 'name' | 'rating' | 'images' | 'isOpen'>;
+  restaurantId:
+    | string
+    | Pick<Restaurant, "_id" | "name" | "rating" | "images" | "isOpen">;
   categoryId: string | { _id: string; name: string };
   name: string;
   description: string;
@@ -198,7 +222,7 @@ interface OrderItem {
 
 interface Order {
   _id: string;
-  orderId: string;                              // e.g. "ND-20261011-001"
+  orderId: string; // e.g. "ND-20261011-001"
   userId: string | Partial<User>;
   restaurantId: string | Partial<Restaurant>;
   riderId?: string | Partial<User>;
@@ -242,10 +266,14 @@ interface CartItem {
 interface Cart {
   _id: string;
   userId: string;
-  restaurantId?: string | Pick<Restaurant, '_id' | 'name' | 'images'>;
+  restaurantId?: string | Pick<Restaurant, "_id" | "name" | "images">;
   items: CartItem[];
   totalAmount: number;
-  appliedOffer?: { offerId: string; code: string; discountAmount: number } | null;
+  appliedOffer?: {
+    offerId: string;
+    code: string;
+    discountAmount: number;
+  } | null;
 }
 
 interface Offer {
@@ -253,7 +281,7 @@ interface Offer {
   code: string;
   title: string;
   description: string;
-  discountType: 'percentage' | 'fixed';
+  discountType: "percentage" | "fixed";
   discountValue: number;
   minOrderAmount: number;
   maxDiscount?: number;
@@ -272,7 +300,7 @@ interface Notification {
   userId: string;
   title: string;
   message: string;
-  type: 'order' | 'payment' | 'promotion' | 'system' | 'delivery';
+  type: "order" | "payment" | "promotion" | "system" | "delivery";
   isRead: boolean;
   relatedData?: Record<string, unknown>;
   createdAt: string;
@@ -308,12 +336,13 @@ interface Category {
 ### `POST /auth/register`
 
 **Response `201`**
+
 ```typescript
 ApiSuccess<{
   user: User;
   token: string;
   refreshToken: string;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError`
@@ -323,12 +352,13 @@ ApiSuccess<{
 ### `POST /auth/login`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   user: User;
   token: string;
   refreshToken: string;
-}>
+}>;
 ```
 
 **Response `401`** — `ApiError` (`"Invalid email or password"`)
@@ -338,8 +368,9 @@ ApiSuccess<{
 ### `POST /auth/logout`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>   // data: {}
+ApiSuccess<Record<string, never>>; // data: {}
 ```
 
 ---
@@ -349,8 +380,9 @@ ApiSuccess<Record<string, never>>   // data: {}
 **Request**: `{ refreshToken: string }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ token: string }>
+ApiSuccess<{ token: string }>;
 ```
 
 **Response `401`** — `ApiError`
@@ -360,11 +392,12 @@ ApiSuccess<{ token: string }>
 ### `POST /auth/forgot-password`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   email: string;
-  expiresIn: string;        // "10 minutes"
-}>
+  expiresIn: string; // "10 minutes"
+}>;
 ```
 
 **Response `404`** — `ApiError`
@@ -374,11 +407,12 @@ ApiSuccess<{
 ### `POST /auth/verify-reset-otp`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   email: string;
   resetToken: string;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError` (`"Invalid or expired OTP"`)
@@ -388,8 +422,9 @@ ApiSuccess<{
 ### `POST /auth/reset-password`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ email: string }>
+ApiSuccess<{ email: string }>;
 ```
 
 **Response `400`** — `ApiError`
@@ -399,8 +434,9 @@ ApiSuccess<{ email: string }>
 ### `POST /auth/verify-email`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ email: string; isVerified: boolean }>
+ApiSuccess<{ email: string; isVerified: boolean }>;
 ```
 
 **Response `400`** — `ApiError`
@@ -410,8 +446,9 @@ ApiSuccess<{ email: string; isVerified: boolean }>
 ### `POST /auth/resend-verification`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ email: string; expiresIn: string }>
+ApiSuccess<{ email: string; expiresIn: string }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -421,8 +458,9 @@ ApiSuccess<{ email: string; expiresIn: string }>
 ### `GET /auth/me`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -448,8 +486,9 @@ All routes require `Bearer` token.
 ### `GET /users/profile`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -457,8 +496,9 @@ ApiSuccess<{ user: User }>
 ### `PUT /users/profile`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -466,6 +506,7 @@ ApiSuccess<{ user: User }>
 ### `PUT /users/preferences`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   preferences: {
@@ -473,7 +514,7 @@ ApiSuccess<{
     allergies: string[];
     calorieGoal?: number;
   };
-}>
+}>;
 ```
 
 ---
@@ -481,10 +522,11 @@ ApiSuccess<{
 ### `PUT /users/notification-preferences`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   notificationPreferences: { email: boolean; push: boolean; sms: boolean };
-}>
+}>;
 ```
 
 ---
@@ -492,8 +534,9 @@ ApiSuccess<{
 ### `GET /users/addresses`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ addresses: Address[] }>
+ApiSuccess<{ addresses: Address[] }>;
 ```
 
 ---
@@ -501,8 +544,9 @@ ApiSuccess<{ addresses: Address[] }>
 ### `POST /users/addresses`
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ addresses: Address[] }>   // full updated list
+ApiSuccess<{ addresses: Address[] }>; // full updated list
 ```
 
 ---
@@ -510,8 +554,9 @@ ApiSuccess<{ addresses: Address[] }>   // full updated list
 ### `PUT /users/addresses/:addressId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ addresses: Address[] }>
+ApiSuccess<{ addresses: Address[] }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -521,8 +566,9 @@ ApiSuccess<{ addresses: Address[] }>
 ### `DELETE /users/addresses/:addressId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ addresses: Address[] }>
+ApiSuccess<{ addresses: Address[] }>;
 ```
 
 ---
@@ -530,11 +576,12 @@ ApiSuccess<{ addresses: Address[] }>
 ### `GET /users/orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -542,19 +589,21 @@ ApiSuccess<{
 ### `GET /users/orders/:orderId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `404`** — `ApiError`
 
 ---
 
-### `POST /users/avatar` *(multipart/form-data)*
+### `POST /users/avatar` _(multipart/form-data)_
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -583,11 +632,12 @@ ApiSuccess<{ user: User }>
 **Query**: `page`, `limit`, `cuisineType`, `minRating`, `search`, `sortBy`, `sortOrder`, `isOpen`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   restaurants: Restaurant[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -595,8 +645,9 @@ ApiSuccess<{
 ### `GET /restaurants/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -606,8 +657,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 ### `GET /restaurants/:id/menu`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ menu: FoodItem[] }>
+ApiSuccess<{ menu: FoodItem[] }>;
 ```
 
 ---
@@ -615,12 +667,13 @@ ApiSuccess<{ menu: FoodItem[] }>
 ### `GET /restaurants/:id/status`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   isOpen: boolean;
   operatingHours: { opening: string; closing: string; days: string[] };
-  deliverySettings: Restaurant['deliverySettings'];
-}>
+  deliverySettings: Restaurant["deliverySettings"];
+}>;
 ```
 
 ---
@@ -630,16 +683,17 @@ ApiSuccess<{
 **Request**: `{ lat: number; lng: number }`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   canDeliver: boolean;
-  distance: number;                      // km, 2 decimal places
-  deliveryRadius: number;                // km
+  distance: number; // km, 2 decimal places
+  deliveryRadius: number; // km
   deliveryFee: number;
   minOrderAmount: number;
-  estimatedDeliveryTime: number;         // minutes
+  estimatedDeliveryTime: number; // minutes
   message: string;
-}>
+}>;
 ```
 
 **Response `400`/`404`** — `ApiError`
@@ -649,8 +703,9 @@ ApiSuccess<{
 ### `GET /restaurants/restaurant`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -660,8 +715,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 ### `POST /restaurants`
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 **Response `400`** — `ApiError`
@@ -671,8 +727,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 ### `PUT /restaurants/restaurant`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 ---
@@ -680,8 +737,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 ### `PUT /restaurants/restaurant/toggle-status`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ isOpen: boolean }>
+ApiSuccess<{ isOpen: boolean }>;
 ```
 
 ---
@@ -689,11 +747,12 @@ ApiSuccess<{ isOpen: boolean }>
 ### `GET /restaurants/restaurant/orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -703,8 +762,9 @@ ApiSuccess<{
 **Request**: `{ action: 'accept' | 'reject'; rejectionReason?: string }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError` (`"Order cannot be accepted at this stage"`)
@@ -716,8 +776,9 @@ ApiSuccess<{ order: Order }>
 **Request**: `{ status: 'confirmed' | 'preparing' | 'ready_for_pickup' | 'cancelled' }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError` (`"Invalid status transition from pending to delivered"`)
@@ -727,12 +788,13 @@ ApiSuccess<{ order: Order }>
 ### `GET /restaurants/restaurant/analytics`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   analytics: {
     totalOrders: number;
     totalRevenue: number;
-    recentOrders: number;                                  // last 30 days
+    recentOrders: number; // last 30 days
     popularItems: {
       _id: string;
       totalQuantity: number;
@@ -740,43 +802,45 @@ ApiSuccess<{
       foodItem: FoodItem;
     }[];
   };
-}>
+}>;
 ```
 
 ---
 
-### `POST /restaurants/restaurant/images` *(multipart/form-data)*
+### `POST /restaurants/restaurant/images` _(multipart/form-data)_
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ images: string[] }>
+ApiSuccess<{ images: string[] }>;
 ```
 
 ---
 
 ## Food APIs (`/api/food`)
 
-| Method | Endpoint                    | Auth     | Role       | Description                        |
-| ------ | --------------------------- | -------- | ---------- | ---------------------------------- |
-| GET    | `/`                         | Optional | -          | Get food items (open restaurants)  |
-| GET    | `/categories`               | Public   | -          | Get all food categories            |
-| GET    | `/search`                   | Public   | -          | Search food items                  |
-| GET    | `/:id`                      | Public   | -          | Get food item by ID                |
-| GET    | `/restaurant/:restaurantId` | Public   | -          | Get food items for a restaurant    |
-| POST   | `/`                         | Required | Restaurant | Create new food item               |
-| PUT    | `/:id`                      | Required | Restaurant | Update food item                   |
-| DELETE | `/:id`                      | Required | Restaurant | Delete food item                   |
-| PATCH  | `/:id/availability`         | Required | Restaurant | Toggle food item availability      |
-| POST   | `/:id/images`               | Required | Restaurant | Upload food item images            |
+| Method | Endpoint                    | Auth     | Role       | Description                       |
+| ------ | --------------------------- | -------- | ---------- | --------------------------------- |
+| GET    | `/`                         | Optional | -          | Get food items (open restaurants) |
+| GET    | `/categories`               | Public   | -          | Get all food categories           |
+| GET    | `/search`                   | Public   | -          | Search food items                 |
+| GET    | `/:id`                      | Public   | -          | Get food item by ID               |
+| GET    | `/restaurant/:restaurantId` | Public   | -          | Get food items for a restaurant   |
+| POST   | `/`                         | Required | Restaurant | Create new food item              |
+| PUT    | `/:id`                      | Required | Restaurant | Update food item                  |
+| DELETE | `/:id`                      | Required | Restaurant | Delete food item                  |
+| PATCH  | `/:id/availability`         | Required | Restaurant | Toggle food item availability     |
+| POST   | `/:id/images`               | Required | Restaurant | Upload food item images           |
 
 ### `GET /food`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   foodItems: FoodItem[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -784,8 +848,9 @@ ApiSuccess<{
 ### `GET /food/categories`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ categories: Category[] }>
+ApiSuccess<{ categories: Category[] }>;
 ```
 
 ---
@@ -795,11 +860,12 @@ ApiSuccess<{ categories: Category[] }>
 **Query**: `q` (required), `category`, `maxCalories`, `dietary`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   foodItems: FoodItem[];
   count: number;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError`
@@ -809,8 +875,9 @@ ApiSuccess<{
 ### `GET /food/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ foodItem: FoodItem }>
+ApiSuccess<{ foodItem: FoodItem }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -820,8 +887,9 @@ ApiSuccess<{ foodItem: FoodItem }>
 ### `GET /food/restaurant/:restaurantId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ foodItems: FoodItem[] }>
+ApiSuccess<{ foodItems: FoodItem[] }>;
 ```
 
 **Response `400`** — `ApiError` (restaurant closed/inactive)
@@ -831,8 +899,9 @@ ApiSuccess<{ foodItems: FoodItem[] }>
 ### `POST /food`
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ foodItem: FoodItem }>
+ApiSuccess<{ foodItem: FoodItem }>;
 ```
 
 ---
@@ -840,8 +909,9 @@ ApiSuccess<{ foodItem: FoodItem }>
 ### `PUT /food/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ foodItem: FoodItem }>
+ApiSuccess<{ foodItem: FoodItem }>;
 ```
 
 ---
@@ -849,8 +919,9 @@ ApiSuccess<{ foodItem: FoodItem }>
 ### `DELETE /food/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>   // data: {}
+ApiSuccess<Record<string, never>>; // data: {}
 ```
 
 ---
@@ -858,17 +929,19 @@ ApiSuccess<Record<string, never>>   // data: {}
 ### `PATCH /food/:id/availability`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ foodItem: FoodItem }>   // foodItem.isAvailable reflects new value
+ApiSuccess<{ foodItem: FoodItem }>; // foodItem.isAvailable reflects new value
 ```
 
 ---
 
-### `POST /food/:id/images` *(multipart/form-data)*
+### `POST /food/:id/images` _(multipart/form-data)_
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ images: string[] }>
+ApiSuccess<{ images: string[] }>;
 ```
 
 ---
@@ -877,22 +950,23 @@ ApiSuccess<{ images: string[] }>
 
 All routes require `user` role.
 
-| Method | Endpoint           | Description                       |
-| ------ | ------------------ | --------------------------------- |
-| GET    | `/`                | Get user's cart                   |
-| POST   | `/add`             | Add item to cart                  |
-| PUT    | `/update/:itemId`  | Update cart item quantity         |
-| DELETE | `/remove/:itemId`  | Remove item from cart             |
-| DELETE | `/clear`           | Clear entire cart                 |
-| POST   | `/apply-offer`     | Apply offer/discount to cart      |
+| Method | Endpoint          | Description                  |
+| ------ | ----------------- | ---------------------------- |
+| GET    | `/`               | Get user's cart              |
+| POST   | `/add`            | Add item to cart             |
+| PUT    | `/update/:itemId` | Update cart item quantity    |
+| DELETE | `/remove/:itemId` | Remove item from cart        |
+| DELETE | `/clear`          | Clear entire cart            |
+| POST   | `/apply-offer`    | Apply offer/discount to cart |
 
 ### `GET /cart`
 
 > Unavailable food items are auto-removed from the cart before responding.
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ cart: Cart }>
+ApiSuccess<{ cart: Cart }>;
 ```
 
 ---
@@ -902,8 +976,9 @@ ApiSuccess<{ cart: Cart }>
 **Request**: `{ foodItemId: string; quantity: number; specialInstructions?: string }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ cart: Cart }>
+ApiSuccess<{ cart: Cart }>;
 ```
 
 **Response `400`** — `ApiError` (item unavailable / cart belongs to another restaurant)
@@ -913,8 +988,9 @@ ApiSuccess<{ cart: Cart }>
 ### `PUT /cart/update/:itemId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ cart: Cart }>
+ApiSuccess<{ cart: Cart }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -924,8 +1000,9 @@ ApiSuccess<{ cart: Cart }>
 ### `DELETE /cart/remove/:itemId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ cart: Cart }>
+ApiSuccess<{ cart: Cart }>;
 ```
 
 ---
@@ -933,8 +1010,9 @@ ApiSuccess<{ cart: Cart }>
 ### `DELETE /cart/clear`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ cart: Cart }>   // empty items array, totalAmount: 0
+ApiSuccess<{ cart: Cart }>; // empty items array, totalAmount: 0
 ```
 
 ---
@@ -944,11 +1022,12 @@ ApiSuccess<{ cart: Cart }>   // empty items array, totalAmount: 0
 **Request**: `{ code: string }`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   discount: number;
   finalAmount: number;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError` (invalid/expired code, min order not met, usage limit reached)
@@ -957,33 +1036,35 @@ ApiSuccess<{
 
 ## Order APIs (`/api/orders`)
 
-| Method | Endpoint                          | Role       | Description                       |
-| ------ | --------------------------------- | ---------- | --------------------------------- |
-| POST   | `/`                               | User       | Create new order                  |
-| GET    | `/`                               | User       | Get user's orders                 |
-| GET    | `/:orderId`                       | Any        | Get order by ID                   |
-| PUT    | `/:orderId/cancel`                | User       | Cancel order                      |
-| POST   | `/:orderId/rate`                  | User       | Rate completed order              |
-| GET    | `/restaurant/orders`              | Restaurant | Get restaurant's orders           |
-| PUT    | `/:orderId/status`                | Restaurant | Update order status               |
-| GET    | `/rider/available`                | Rider      | Get available delivery orders     |
-| GET    | `/rider/my-orders`                | Rider      | Get rider's assigned orders       |
-| POST   | `/:orderId/accept`                | Rider      | Accept delivery order             |
-| POST   | `/:orderId/reject`                | Rider      | Reject delivery order             |
-| PUT    | `/:orderId/location`              | Rider      | Update delivery location          |
-| POST   | `/:orderId/confirm-pickup`        | Rider      | Confirm order pickup              |
-| POST   | `/:orderId/confirm-delivery`      | Rider      | Confirm order delivery            |
+| Method | Endpoint                     | Role       | Description                   |
+| ------ | ---------------------------- | ---------- | ----------------------------- |
+| POST   | `/`                          | User       | Create new order              |
+| GET    | `/`                          | User       | Get user's orders             |
+| GET    | `/:orderId`                  | Any        | Get order by ID               |
+| PUT    | `/:orderId/cancel`           | User       | Cancel order                  |
+| POST   | `/:orderId/rate`             | User       | Rate completed order          |
+| GET    | `/restaurant/orders`         | Restaurant | Get restaurant's orders       |
+| PUT    | `/:orderId/status`           | Restaurant | Update order status           |
+| GET    | `/rider/available`           | Rider      | Get available delivery orders |
+| GET    | `/rider/my-orders`           | Rider      | Get rider's assigned orders   |
+| POST   | `/:orderId/accept`           | Rider      | Accept delivery order         |
+| POST   | `/:orderId/reject`           | Rider      | Reject delivery order         |
+| PUT    | `/:orderId/location`         | Rider      | Update delivery location      |
+| POST   | `/:orderId/confirm-pickup`   | Rider      | Confirm order pickup          |
+| POST   | `/:orderId/confirm-delivery` | Rider      | Confirm order delivery        |
 
 ### `POST /orders`
 
 > Validates: restaurant open, minimum order amount, delivery radius. Items are read from the **cart**, not the request body.
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError`
+
 - `"Cart is empty"`
 - `"Item \"X\" is no longer available"`
 - `"Restaurant is currently closed"`
@@ -995,11 +1076,12 @@ ApiSuccess<{ order: Order }>
 ### `GET /orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1007,8 +1089,9 @@ ApiSuccess<{
 ### `GET /orders/:orderId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>   // populated with restaurant, items, user, rider
+ApiSuccess<{ order: Order }>; // populated with restaurant, items, user, rider
 ```
 
 **Response `404`** — `ApiError`
@@ -1020,8 +1103,9 @@ ApiSuccess<{ order: Order }>   // populated with restaurant, items, user, rider
 > Allowed only when `status` is `pending` or `confirmed`.
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError` (`"Order cannot be cancelled at this stage"`)
@@ -1033,8 +1117,9 @@ ApiSuccess<{ order: Order }>
 **Request**: `{ rating: 1|2|3|4|5; review?: string }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError` (order not delivered / rating out of range)
@@ -1044,11 +1129,12 @@ ApiSuccess<{ order: Order }>
 ### `GET /orders/restaurant/orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1058,8 +1144,9 @@ ApiSuccess<{
 > Validated transitions: `confirmed → preparing → ready_for_pickup → cancelled`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 **Response `400`** — `ApiError` (`"Invalid status transition from preparing to delivered"`)
@@ -1071,6 +1158,7 @@ ApiSuccess<{ order: Order }>
 **Query**: `lat` (required), `lng` (required), `maxDistance` (default 10)
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: {
@@ -1081,10 +1169,13 @@ ApiSuccess<{
     deliveryAddress: Address;
     estimatedDelivery?: string;
     preparationTime: number;
-    distance: number;                  // degrees approximation
-    restaurant: { name: string; contact: { address: Restaurant['contact']['address'] } };
+    distance: number; // degrees approximation
+    restaurant: {
+      name: string;
+      contact: { address: Restaurant["contact"]["address"] };
+    };
   }[];
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError`
@@ -1094,11 +1185,12 @@ ApiSuccess<{
 ### `GET /orders/rider/my-orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1108,8 +1200,9 @@ ApiSuccess<{
 > Only matches orders with `status: 'ready_for_pickup'` and no assigned rider (atomic claim).
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>   // status: 'pickedup', deliveryDetails.riderId set
+ApiSuccess<{ order: Order }>; // status: 'pickedup', deliveryDetails.riderId set
 ```
 
 **Response `400`** — `ApiError` (`"Order not available for delivery"`)
@@ -1119,8 +1212,9 @@ ApiSuccess<{ order: Order }>   // status: 'pickedup', deliveryDetails.riderId se
 ### `POST /orders/:orderId/reject`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>   // data: {}
+ApiSuccess<Record<string, never>>; // data: {}
 ```
 
 ---
@@ -1130,8 +1224,9 @@ ApiSuccess<Record<string, never>>   // data: {}
 **Request**: `{ lat: number; lng: number }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 **Response `404`** — `ApiError`
@@ -1141,8 +1236,9 @@ ApiSuccess<Record<string, never>>
 ### `POST /orders/:orderId/confirm-pickup`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>   // status: 'out_for_delivery'
+ApiSuccess<{ order: Order }>; // status: 'out_for_delivery'
 ```
 
 ---
@@ -1152,32 +1248,34 @@ ApiSuccess<{ order: Order }>   // status: 'out_for_delivery'
 **Request**: `{ image?: string; signature?: string; notes?: string }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>   // status: 'delivered', deliveryProof populated
+ApiSuccess<{ order: Order }>; // status: 'delivered', deliveryProof populated
 ```
 
 ---
 
 ## Payment APIs (`/api/payments`)
 
-| Method | Endpoint              | Role             | Description                    |
-| ------ | --------------------- | ---------------- | ------------------------------ |
-| POST   | `/create-intent`      | User             | Create payment intent (Stripe) |
-| POST   | `/confirm`            | User             | Confirm payment                |
-| GET    | `/methods`            | User             | Get saved payment methods      |
-| POST   | `/methods`            | User             | Add new payment method         |
-| DELETE | `/methods/:methodId`  | User             | Remove payment method          |
-| GET    | `/history`            | User             | Get payment history            |
-| POST   | `/refund`             | Admin/Restaurant | Process refund                 |
+| Method | Endpoint             | Role             | Description                    |
+| ------ | -------------------- | ---------------- | ------------------------------ |
+| POST   | `/create-intent`     | User             | Create payment intent (Stripe) |
+| POST   | `/confirm`           | User             | Confirm payment                |
+| GET    | `/methods`           | User             | Get saved payment methods      |
+| POST   | `/methods`           | User             | Add new payment method         |
+| DELETE | `/methods/:methodId` | User             | Remove payment method          |
+| GET    | `/history`           | User             | Get payment history            |
+| POST   | `/refund`            | Admin/Restaurant | Process refund                 |
 
 ### `POST /payments/create-intent`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   clientSecret: string;
   paymentIntentId: string;
-}>
+}>;
 ```
 
 ---
@@ -1185,11 +1283,12 @@ ApiSuccess<{
 ### `POST /payments/confirm`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   paymentStatus: PaymentStatus;
   orderId: string;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError`
@@ -1199,8 +1298,9 @@ ApiSuccess<{
 ### `GET /payments/methods`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ paymentMethods: [] }>   // empty array until Stripe methods are persisted
+ApiSuccess<{ paymentMethods: [] }>; // empty array until Stripe methods are persisted
 ```
 
 ---
@@ -1208,8 +1308,9 @@ ApiSuccess<{ paymentMethods: [] }>   // empty array until Stripe methods are per
 ### `POST /payments/methods`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1217,8 +1318,9 @@ ApiSuccess<Record<string, never>>
 ### `DELETE /payments/methods/:methodId`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1226,11 +1328,12 @@ ApiSuccess<Record<string, never>>
 ### `GET /payments/history`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   payments: (Order & { paymentStatus: PaymentStatus; grandTotal: number })[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1238,33 +1341,35 @@ ApiSuccess<{
 ### `POST /payments/refund`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   refundId: string;
   orderId: string;
   amount: number;
-}>
+}>;
 ```
 
 ---
 
 ## Offer APIs (`/api/offers`)
 
-| Method | Endpoint      | Auth     | Role  | Description                         |
-| ------ | ------------- | -------- | ----- | ----------------------------------- |
-| GET    | `/`           | Optional | -     | Get active offers                   |
-| GET    | `/:id`        | Public   | -     | Get offer by ID                     |
-| POST   | `/validate`   | Required | User  | Validate offer code                 |
-| GET    | `/admin/all`  | Required | Admin | Get all offers (including inactive) |
-| POST   | `/`           | Required | Admin | Create new offer                    |
-| PUT    | `/:id`        | Required | Admin | Update offer                        |
-| DELETE | `/:id`        | Required | Admin | Delete offer                        |
+| Method | Endpoint     | Auth     | Role  | Description                         |
+| ------ | ------------ | -------- | ----- | ----------------------------------- |
+| GET    | `/`          | Optional | -     | Get active offers                   |
+| GET    | `/:id`       | Public   | -     | Get offer by ID                     |
+| POST   | `/validate`  | Required | User  | Validate offer code                 |
+| GET    | `/admin/all` | Required | Admin | Get all offers (including inactive) |
+| POST   | `/`          | Required | Admin | Create new offer                    |
+| PUT    | `/:id`       | Required | Admin | Update offer                        |
+| DELETE | `/:id`       | Required | Admin | Delete offer                        |
 
 ### `GET /offers`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ offers: Offer[] }>
+ApiSuccess<{ offers: Offer[] }>;
 ```
 
 ---
@@ -1272,8 +1377,9 @@ ApiSuccess<{ offers: Offer[] }>
 ### `GET /offers/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ offer: Offer }>
+ApiSuccess<{ offer: Offer }>;
 ```
 
 **Response `404`** — `ApiError`
@@ -1285,6 +1391,7 @@ ApiSuccess<{ offer: Offer }>
 **Request**: `{ code: string; orderTotal: number; restaurantId?: string }`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   valid: true;
@@ -1292,13 +1399,13 @@ ApiSuccess<{
     id: string;
     code: string;
     description: string;
-    discountType: 'percentage' | 'fixed';
+    discountType: "percentage" | "fixed";
     discountValue: number;
     minOrderAmount: number;
     maxDiscount?: number;
   };
   discountAmount: number;
-}>
+}>;
 ```
 
 **Response `400`** — `ApiError`
@@ -1308,11 +1415,12 @@ ApiSuccess<{
 ### `GET /offers/admin/all`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   offers: Offer[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1320,8 +1428,9 @@ ApiSuccess<{
 ### `POST /offers`
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ offer: Offer }>
+ApiSuccess<{ offer: Offer }>;
 ```
 
 ---
@@ -1329,8 +1438,9 @@ ApiSuccess<{ offer: Offer }>
 ### `PUT /offers/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ offer: Offer }>
+ApiSuccess<{ offer: Offer }>;
 ```
 
 ---
@@ -1338,31 +1448,33 @@ ApiSuccess<{ offer: Offer }>
 ### `DELETE /offers/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
 
 ## Notification APIs (`/api/notifications`)
 
-| Method | Endpoint         | Description                      |
-| ------ | ---------------- | -------------------------------- |
-| GET    | `/`              | Get user notifications           |
-| GET    | `/unread-count`  | Get unread notification count    |
-| PUT    | `/:id/read`      | Mark notification as read        |
-| PUT    | `/read-all`      | Mark all notifications as read   |
-| DELETE | `/:id`           | Delete notification              |
-| PUT    | `/preferences`   | Update notification preferences  |
+| Method | Endpoint        | Description                     |
+| ------ | --------------- | ------------------------------- |
+| GET    | `/`             | Get user notifications          |
+| GET    | `/unread-count` | Get unread notification count   |
+| PUT    | `/:id/read`     | Mark notification as read       |
+| PUT    | `/read-all`     | Mark all notifications as read  |
+| DELETE | `/:id`          | Delete notification             |
+| PUT    | `/preferences`  | Update notification preferences |
 
 ### `GET /notifications`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   notifications: Notification[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1370,8 +1482,9 @@ ApiSuccess<{
 ### `GET /notifications/unread-count`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ count: number }>
+ApiSuccess<{ count: number }>;
 ```
 
 ---
@@ -1379,8 +1492,9 @@ ApiSuccess<{ count: number }>
 ### `PUT /notifications/:id/read`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ notification: Notification }>
+ApiSuccess<{ notification: Notification }>;
 ```
 
 ---
@@ -1388,8 +1502,9 @@ ApiSuccess<{ notification: Notification }>
 ### `PUT /notifications/read-all`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ updatedCount: number }>
+ApiSuccess<{ updatedCount: number }>;
 ```
 
 ---
@@ -1397,8 +1512,9 @@ ApiSuccess<{ updatedCount: number }>
 ### `DELETE /notifications/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1406,10 +1522,11 @@ ApiSuccess<Record<string, never>>
 ### `PUT /notifications/preferences`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   notificationPreferences: { email: boolean; push: boolean; sms: boolean };
-}>
+}>;
 ```
 
 ---
@@ -1439,11 +1556,12 @@ ApiSuccess<{
 ### `POST /riders/register`
 
 **Response `201`**
+
 ```typescript
 ApiSuccess<{
   user: User;
-  message: string;      // "Rider registration submitted for verification"
-}>
+  message: string; // "Rider registration submitted for verification"
+}>;
 ```
 
 ---
@@ -1451,8 +1569,9 @@ ApiSuccess<{
 ### `GET /riders/profile`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
+ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>;
 ```
 
 ---
@@ -1460,19 +1579,21 @@ ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
 ### `PUT /riders/profile`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
+ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>;
 ```
 
 ---
 
-### `POST /riders/documents` *(multipart/form-data)*
+### `POST /riders/documents` _(multipart/form-data)_
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   documents: { type: string; url: string; uploadedAt: string }[];
-}>
+}>;
 ```
 
 ---
@@ -1482,10 +1603,14 @@ ApiSuccess<{
 **Request**: `{ status: 'available' | 'offline' }`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
-  availability: { status: 'available' | 'busy' | 'offline'; lastUpdated?: string };
-}>
+  availability: {
+    status: "available" | "busy" | "offline";
+    lastUpdated?: string;
+  };
+}>;
 ```
 
 ---
@@ -1493,10 +1618,11 @@ ApiSuccess<{
 ### `PUT /riders/location`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   location: Coordinates & { lastUpdated: string };
-}>
+}>;
 ```
 
 ---
@@ -1504,6 +1630,7 @@ ApiSuccess<{
 ### `GET /riders/orders/available`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: {
@@ -1512,10 +1639,12 @@ ApiSuccess<{
     grandTotal: number;
     deliveryFee: number;
     distance: number;
-    restaurant: Pick<Restaurant, '_id' | 'name'> & { contact: Restaurant['contact'] };
+    restaurant: Pick<Restaurant, "_id" | "name"> & {
+      contact: Restaurant["contact"];
+    };
     deliveryAddress: Address;
   }[];
-}>
+}>;
 ```
 
 ---
@@ -1523,8 +1652,9 @@ ApiSuccess<{
 ### `POST /riders/orders/:orderId/accept`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 ---
@@ -1532,8 +1662,9 @@ ApiSuccess<{ order: Order }>
 ### `POST /riders/orders/:orderId/reject`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1541,8 +1672,9 @@ ApiSuccess<Record<string, never>>
 ### `GET /riders/orders/current`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order | null }>
+ApiSuccess<{ order: Order | null }>;
 ```
 
 ---
@@ -1550,11 +1682,12 @@ ApiSuccess<{ order: Order | null }>
 ### `GET /riders/orders/history`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1562,8 +1695,9 @@ ApiSuccess<{
 ### `POST /riders/orders/:orderId/confirm-pickup`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 ---
@@ -1571,8 +1705,9 @@ ApiSuccess<{ order: Order }>
 ### `POST /riders/orders/:orderId/confirm-delivery`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 ---
@@ -1580,11 +1715,16 @@ ApiSuccess<{ order: Order }>
 ### `GET /riders/earnings`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
-  earnings: { totalEarnings: number; totalDeliveries: number; averageEarning: number };
-  currentBalance: RiderProfile['earnings'];
-}>
+  earnings: {
+    totalEarnings: number;
+    totalDeliveries: number;
+    averageEarning: number;
+  };
+  currentBalance: RiderProfile["earnings"];
+}>;
 ```
 
 ---
@@ -1594,11 +1734,16 @@ ApiSuccess<{
 **Period**: `daily` | `weekly` | `monthly` | `yearly`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   period: string;
-  earnings: { totalEarnings: number; totalDeliveries: number; averageEarning: number };
-}>
+  earnings: {
+    totalEarnings: number;
+    totalDeliveries: number;
+    averageEarning: number;
+  };
+}>;
 ```
 
 ---
@@ -1606,14 +1751,15 @@ ApiSuccess<{
 ### `GET /riders/stats`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   stats: {
     totalDeliveries: number;
-    completionRate: number;         // percentage
-    averageDeliveryTime: number;    // minutes
+    completionRate: number; // percentage
+    averageDeliveryTime: number; // minutes
   };
-}>
+}>;
 ```
 
 ---
@@ -1621,13 +1767,14 @@ ApiSuccess<{
 ### `GET /riders/ratings`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   ratings: (Order & { rating: number; review?: string })[];
   averageRating: number;
   totalRatings: number;
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1636,40 +1783,42 @@ ApiSuccess<{
 
 All routes require `admin` role.
 
-| Method | Endpoint                   | Description               |
-| ------ | -------------------------- | ------------------------- |
-| GET    | `/users`                   | Get all users             |
-| GET    | `/users/:id`               | Get user by ID            |
-| PUT    | `/users/:id/status`        | Update user status        |
-| DELETE | `/users/:id`               | Delete user               |
-| GET    | `/restaurants`             | Get all restaurants       |
-| GET    | `/restaurants/:id`         | Get restaurant by ID      |
-| PUT    | `/restaurants/:id/verify`  | Verify restaurant         |
-| PUT    | `/restaurants/:id/status`  | Update restaurant status  |
-| GET    | `/riders`                  | Get all riders            |
-| GET    | `/riders/:id`              | Get rider by ID           |
-| PUT    | `/riders/:id/verify`       | Verify rider              |
-| PUT    | `/riders/:id/status`       | Update rider status       |
-| GET    | `/orders`                  | Get all orders            |
-| GET    | `/orders/:id`              | Get order by ID           |
-| PUT    | `/orders/:id`              | Update order              |
-| POST   | `/categories`              | Create category           |
-| PUT    | `/categories/:id`          | Update category           |
-| DELETE | `/categories/:id`          | Delete category           |
-| GET    | `/analytics/platform`      | Get platform analytics    |
-| GET    | `/analytics/sales`         | Get sales analytics       |
-| GET    | `/analytics/users`         | Get user analytics        |
-| GET    | `/settings`                | Get system settings       |
-| PUT    | `/settings`                | Update system settings    |
+| Method | Endpoint                  | Description              |
+| ------ | ------------------------- | ------------------------ |
+| GET    | `/users`                  | Get all users            |
+| GET    | `/users/:id`              | Get user by ID           |
+| PUT    | `/users/:id/status`       | Update user status       |
+| DELETE | `/users/:id`              | Delete user              |
+| GET    | `/restaurants`            | Get all restaurants      |
+| GET    | `/restaurants/:id`        | Get restaurant by ID     |
+| PUT    | `/restaurants/:id/verify` | Verify restaurant        |
+| PUT    | `/restaurants/:id/status` | Update restaurant status |
+| GET    | `/riders`                 | Get all riders           |
+| GET    | `/riders/:id`             | Get rider by ID          |
+| PUT    | `/riders/:id/verify`      | Verify rider             |
+| PUT    | `/riders/:id/status`      | Update rider status      |
+| GET    | `/orders`                 | Get all orders           |
+| GET    | `/orders/:id`             | Get order by ID          |
+| PUT    | `/orders/:id`             | Update order             |
+| GET    | `/categories`             | Get all categories       |
+| POST   | `/categories`             | Create category          |
+| PUT    | `/categories/:id`         | Update category          |
+| DELETE | `/categories/:id`         | Delete category          |
+| GET    | `/analytics/platform`     | Get platform analytics   |
+| GET    | `/analytics/sales`        | Get sales analytics      |
+| GET    | `/analytics/users`        | Get user analytics       |
+| GET    | `/settings`               | Get system settings      |
+| PUT    | `/settings`               | Update system settings   |
 
 ### `GET /admin/users`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   users: User[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1677,8 +1826,9 @@ ApiSuccess<{
 ### `GET /admin/users/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -1688,8 +1838,9 @@ ApiSuccess<{ user: User }>
 **Request**: `{ isActive: boolean }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ user: User }>
+ApiSuccess<{ user: User }>;
 ```
 
 ---
@@ -1697,8 +1848,9 @@ ApiSuccess<{ user: User }>
 ### `DELETE /admin/users/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1706,11 +1858,12 @@ ApiSuccess<Record<string, never>>
 ### `GET /admin/restaurants`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   restaurants: Restaurant[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1718,8 +1871,9 @@ ApiSuccess<{
 ### `GET /admin/restaurants/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 ---
@@ -1729,8 +1883,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 **Request**: `{ isVerified: boolean }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 ---
@@ -1740,8 +1895,9 @@ ApiSuccess<{ restaurant: Restaurant }>
 **Request**: `{ isActive: boolean }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ restaurant: Restaurant }>
+ApiSuccess<{ restaurant: Restaurant }>;
 ```
 
 ---
@@ -1749,11 +1905,12 @@ ApiSuccess<{ restaurant: Restaurant }>
 ### `GET /admin/riders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   riders: (User & { riderProfile: RiderProfile })[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1761,8 +1918,9 @@ ApiSuccess<{
 ### `GET /admin/riders/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
+ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>;
 ```
 
 ---
@@ -1772,8 +1930,9 @@ ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
 **Request**: `{ isVerified: boolean }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
+ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>;
 ```
 
 ---
@@ -1783,8 +1942,9 @@ ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
 **Request**: `{ isActive: boolean }`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
+ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>;
 ```
 
 ---
@@ -1792,11 +1952,12 @@ ApiSuccess<{ rider: User & { riderProfile: RiderProfile } }>
 ### `GET /admin/orders`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   orders: Order[];
   pagination: Pagination;
-}>
+}>;
 ```
 
 ---
@@ -1804,8 +1965,9 @@ ApiSuccess<{
 ### `GET /admin/orders/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
 ```
 
 ---
@@ -1813,8 +1975,24 @@ ApiSuccess<{ order: Order }>
 ### `PUT /admin/orders/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ order: Order }>
+ApiSuccess<{ order: Order }>;
+```
+
+---
+
+### `GET /admin/categories`
+
+**Query**: `page`, `limit`, `search`, `isActive`
+
+**Response `200`**
+
+```typescript
+ApiSuccess<{
+  categories: Category[];
+  pagination: Pagination;
+}>;
 ```
 
 ---
@@ -1822,8 +2000,9 @@ ApiSuccess<{ order: Order }>
 ### `POST /admin/categories`
 
 **Response `201`**
+
 ```typescript
-ApiSuccess<{ category: Category }>
+ApiSuccess<{ category: Category }>;
 ```
 
 ---
@@ -1831,8 +2010,9 @@ ApiSuccess<{ category: Category }>
 ### `PUT /admin/categories/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<{ category: Category }>
+ApiSuccess<{ category: Category }>;
 ```
 
 ---
@@ -1840,8 +2020,9 @@ ApiSuccess<{ category: Category }>
 ### `DELETE /admin/categories/:id`
 
 **Response `200`**
+
 ```typescript
-ApiSuccess<Record<string, never>>
+ApiSuccess<Record<string, never>>;
 ```
 
 ---
@@ -1849,12 +2030,13 @@ ApiSuccess<Record<string, never>>
 ### `GET /admin/analytics/platform`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   analytics: {
     users: {
       total: number;
-      new: number;                              // last 30 days
+      new: number; // last 30 days
       byRole: { _id: UserRole; count: number }[];
     };
     restaurants: {
@@ -1869,7 +2051,7 @@ ApiSuccess<{
     };
     revenue: { totalRevenue: number; recentRevenue: number };
   };
-}>
+}>;
 ```
 
 ---
@@ -1879,12 +2061,23 @@ ApiSuccess<{
 **Query**: `period` = `week` | `month` | `year` (default `month`)
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   salesOverTime: { _id: string; orders: number; revenue: number }[];
-  topRestaurants: { _id: string; orders: number; revenue: number; restaurant: Restaurant }[];
-  popularItems: { _id: string; totalQuantity: number; totalRevenue: number; foodItem: FoodItem }[];
-}>
+  topRestaurants: {
+    _id: string;
+    orders: number;
+    revenue: number;
+    restaurant: Restaurant;
+  }[];
+  popularItems: {
+    _id: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    foodItem: FoodItem;
+  }[];
+}>;
 ```
 
 ---
@@ -1892,12 +2085,17 @@ ApiSuccess<{
 ### `GET /admin/analytics/users`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
-  userGrowth: { _id: string; newUsers: number }[];       // grouped by date
-  activeUsers: number;                                    // ordered in last 30 days
-  avgOrderValue: { _id: UserRole; avgOrderValue: number; totalOrders: number }[];
-}>
+  userGrowth: { _id: string; newUsers: number }[]; // grouped by date
+  activeUsers: number; // ordered in last 30 days
+  avgOrderValue: {
+    _id: UserRole;
+    avgOrderValue: number;
+    totalOrders: number;
+  }[];
+}>;
 ```
 
 ---
@@ -1905,6 +2103,7 @@ ApiSuccess<{
 ### `GET /admin/settings`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   settings: {
@@ -1914,7 +2113,7 @@ ApiSuccess<{
     taxRate: number;
     maxDeliveryRadius: number;
   };
-}>
+}>;
 ```
 
 ---
@@ -1922,6 +2121,7 @@ ApiSuccess<{
 ### `PUT /admin/settings`
 
 **Response `200`**
+
 ```typescript
 ApiSuccess<{
   settings: {
@@ -1931,8 +2131,115 @@ ApiSuccess<{
     taxRate: number;
     maxDeliveryRadius: number;
   };
-}>
+}>;
 ```
+
+---
+
+## ⚠️ Undocumented Endpoints (Frontend-Assumed — NEEDS VERIFICATION)
+
+The endpoints below are called by the admin panel frontend but are **not** part of the
+verified API surface above. They were inferred from frontend requirements, not confirmed
+against the backend implementation. Treat them as a contract to confirm or correct —
+do not rely on them until the backend routes are checked.
+
+### `GET /admin/admins`
+
+**Query**: `page`, `limit`, `search`, `role`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{
+  admins: User[];
+  pagination: Pagination;
+}>;
+```
+
+> ⚠️ Admins are modelled as `User` with `role: 'admin'`. The existing
+> `GET /admin/users` endpoint may already cover this, in which case
+> `/admin/admins` should be dropped.
+
+---
+
+### `POST /admin/admins`
+
+**Request**: `{ email, name, role, permissions: string[] }`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{ admin: User }>;
+```
+
+---
+
+### `GET /admin/admins/:id`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{ admin: User }>;
+```
+
+---
+
+### `PUT /admin/admins/:id`
+
+**Request**: `{ name?, role?, permissions?: string[] }`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{ admin: User }>;
+```
+
+---
+
+### `DELETE /admin/admins/:id`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<Record<string, never>>;
+```
+
+---
+
+### `GET /admin/payments`
+
+**Query**: `page`, `limit`, `status`, `method`, `startDate`, `endDate`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{
+  payments: Order[];
+  pagination: Pagination;
+}>;
+```
+
+> ⚠️ `GET /payments/history` (documented above, `user` role) already returns
+> payments. An admin-scoped variant is expected but unconfirmed.
+
+---
+
+### `GET /admin/food`
+
+**Query**: `page`, `limit`, `search`, `category`, `restaurantId`, `isAvailable`
+
+**Response (assumed)**
+
+```typescript
+ApiSuccess<{
+  foodItems: FoodItem[];
+  pagination: Pagination;
+}>;
+```
+
+> ⚠️ `GET /food` (documented above) returns food from **open restaurants only**.
+> An admin-scoped list that includes closed restaurants and availability
+> filtering is expected but unconfirmed.
 
 ---
 
@@ -1945,12 +2252,13 @@ ApiSuccess<{
 ### `GET /health`
 
 **Response `200`**
+
 ```typescript
 {
   success: true;
-  message: string;      // "🚀 NutriDeliver Backend is running successfully!"
-  timestamp: string;    // ISO 8601
-  version: string;      // "1.0.0"
+  message: string; // "🚀 NutriDeliver Backend is running successfully!"
+  timestamp: string; // ISO 8601
+  version: string; // "1.0.0"
 }
 ```
 
@@ -1977,16 +2285,23 @@ Authorization: Bearer <access_token>
 ## Response Formats
 
 **Success**
+
 ```typescript
-{ success: true; message: string; data: T }
+{
+  success: true;
+  message: string;
+  data: T;
+}
 ```
 
 **Error**
+
 ```typescript
 { success: false; message: string; errors?: { field: string; message: string }[] }
 ```
 
 **Paginated (list endpoints)**
+
 ```typescript
 { success: true; data: { <collection>: T[]; pagination: { current; pages; total } } }
 ```
@@ -2003,12 +2318,12 @@ pending → confirmed → preparing → ready_for_pickup → pickedup → out_fo
 
 ### Valid Transitions by Role
 
-| Role       | Allowed Transitions                                              |
-| ---------- | ---------------------------------------------------------------- |
-| Customer   | `pending → cancelled`, `confirmed → cancelled`                    |
+| Role       | Allowed Transitions                                                                             |
+| ---------- | ----------------------------------------------------------------------------------------------- |
+| Customer   | `pending → cancelled`, `confirmed → cancelled`                                                  |
 | Restaurant | `pending → confirmed`, `confirmed → preparing`, `preparing → ready_for_pickup`, `* → cancelled` |
-| Rider      | `ready_for_pickup → pickedup`, `pickedup → out_for_delivery`, `out_for_delivery → delivered` |
-| System     | `ready_for_pickup → cancelled` (auto after 10 min, no rider)     |
+| Rider      | `ready_for_pickup → pickedup`, `pickedup → out_for_delivery`, `out_for_delivery → delivered`    |
+| System     | `ready_for_pickup → cancelled` (auto after 10 min, no rider)                                    |
 
 ---
 

@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Search,
   MoreVertical,
   CheckCircle2,
   XCircle,
@@ -11,44 +10,11 @@ import {
   DollarSign,
   Clock,
   Flame,
-  FlameIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,20 +23,25 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+  PageHeader,
+  FilterBar,
+  ConfirmDialog,
+  TablePagination,
+  TableFooterText,
+  TableState,
+  DataTable,
+  DataTableHead,
+  DataTableBody,
+  DataTableRow,
+  TableCell,
+  TableHead,
+} from "@/components/common";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import type { FoodItem, Category } from "@/types";
+import type { Category, FoodItem } from "@/types";
+import { AVAILABILITY_OPTIONS, categoryOptions } from "@/features/food";
+
+const PAGE_SIZE = 10;
 
 export function FoodPage() {
   const [foods, setFoods] = useState<FoodItem[]>([]);
@@ -85,12 +56,12 @@ export function FoodPage() {
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const fetchFoods = async () => {
+  const fetchFoods = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await api.getFoods({
         page: currentPage,
-        limit: 10,
+        limit: PAGE_SIZE,
         search: searchQuery,
         category: categoryFilter,
         isAvailable:
@@ -119,29 +90,26 @@ export function FoodPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, categoryFilter, availabilityFilter]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const response = await api.getCategories();
+      const response = await api.getCategories({ limit: 100 });
       if (response.success && response.data) {
-        setCategories(response.data as Category[]);
+        setCategories(response.data.categories);
       }
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFoods();
-    fetchCategories();
-  }, [currentPage, searchQuery, categoryFilter, availabilityFilter]);
+  }, [fetchFoods]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    fetchFoods();
-  };
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const handleAvailabilityChange = async (food: FoodItem) => {
     try {
@@ -149,12 +117,14 @@ export function FoodPage() {
       if (response.success) {
         toast({
           title: "Success",
-          description: `Food availability updated`,
+          description: `${food.name} is now ${
+            food.isAvailable ? "unavailable" : "available"
+          }`,
           variant: "success",
         });
         fetchFoods();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to toggle availability",
@@ -173,10 +143,10 @@ export function FoodPage() {
           description: "Food item deleted",
           variant: "success",
         });
-        fetchFoods();
         setIsDeleteDialogOpen(false);
+        fetchFoods();
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete food item",
@@ -187,284 +157,192 @@ export function FoodPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Food Management</h1>
-          <p className="text-muted-foreground">
-            Manage food items across all restaurants
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Food Management"
+        description="Manage food items across all restaurants"
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>Food Items</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="mb-4 flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[250px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search food items..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+        <CardContent className="space-y-4">
+          <FilterBar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search food items..."
+            onSearch={() => setCurrentPage(1)}
+            filters={[
+              {
+                key: "category",
+                label: "All Categories",
+                value: categoryFilter,
+                onValueChange: setCategoryFilter,
+                options: categoryOptions(categories),
+              },
+              {
+                key: "availability",
+                label: "Availability",
+                value: availabilityFilter,
+                onValueChange: setAvailabilityFilter,
+                options: AVAILABILITY_OPTIONS,
+              },
+            ]}
+          />
+
+          <DataTable>
+            <DataTableHead>
+              <TableHead>Food Item</TableHead>
+              <TableHead>Restaurant</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Nutrition</TableHead>
+              <TableHead>Dietary Tags</TableHead>
+              <TableHead>Availability</TableHead>
+              <TableHead>Prep Time</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </DataTableHead>
+            <DataTableBody>
+              <TableState
+                isLoading={isLoading}
+                isEmpty={foods.length === 0}
+                colSpan={9}
+                emptyMessage="No food items found"
               />
-            </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={availabilityFilter}
-              onValueChange={setAvailabilityFilter}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Availability" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All</SelectItem>
-                <SelectItem value="true">Available</SelectItem>
-                <SelectItem value="false">Unavailable</SelectItem>
-              </SelectContent>
-            </Select>
-          </form>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Food Item</TableHead>
-                  <TableHead>Restaurant</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Nutrition</TableHead>
-                  <TableHead>Dietary Tags</TableHead>
-                  <TableHead>Availability</TableHead>
-                  <TableHead>Prep Time</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
-                      <div className="flex justify-center">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : foods.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={9}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No food items found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  foods.map((food) => (
-                    <TableRow key={food._id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage
-                              src={food.images?.[0]}
-                              alt={food.name}
-                            />
-                            <AvatarFallback>
-                              <Utensils className="h-4 w-4" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{food.name}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                              {food.description}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">
-                          {typeof food.restaurantId === "object"
-                            ? food.restaurantId.name
-                            : "N/A"}
+              {foods.map((food) => (
+                <DataTableRow key={food._id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={food.images?.[0]} alt={food.name} />
+                        <AvatarFallback>
+                          <Utensils className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{food.name}</p>
+                        <p className="max-w-[200px] truncate text-sm text-muted-foreground">
+                          {food.description}
                         </p>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="gap-1">
-                          <Tag className="h-3 w-3" />
-                          {typeof food.categoryId === "object"
-                            ? food.categoryId.name
-                            : "N/A"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-3 w-3 text-muted-foreground" />
-                          <span>${food.price.toFixed(2)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>
-                            <Flame className="h-3 w-3 inline mr-1" />{" "}
-                            {food.calories} cal
-                          </span>
-                          <span>P: {food.protein}g</span>
-                          <span>C: {food.carbs}g</span>
-                          <span>F: {food.fat}g</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {food.dietaryTags?.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="text-xs h-5 px-2 capitalize"
-                            >
-                              {tag.replace("-", " ")}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium">
+                      {typeof food.restaurantId === "object"
+                        ? food.restaurantId.name
+                        : "N/A"}
+                    </p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="gap-1">
+                      <Tag className="h-3 w-3" />
+                      {typeof food.categoryId === "object"
+                        ? food.categoryId.name
+                        : "N/A"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      <span>${food.price.toFixed(2)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>
+                        <Flame className="mr-1 inline h-3 w-3" />
+                        {food.calories} cal
+                      </span>
+                      <span>P: {food.protein}g</span>
+                      <span>C: {food.carbs}g</span>
+                      <span>F: {food.fat}g</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {food.dietaryTags?.map((tag) => (
                         <Badge
-                          variant={food.isAvailable ? "success" : "secondary"}
+                          key={tag}
+                          variant="outline"
+                          className="h-5 px-2 text-xs capitalize"
                         >
-                          {food.isAvailable ? "Available" : "Unavailable"}
+                          {tag.replace("-", " ")}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{food.preparationTime} min</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleAvailabilityChange(food)}
-                            >
-                              {food.isAvailable ? (
-                                <>
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Make Unavailable
-                                </>
-                              ) : (
-                                <>
-                                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                                  Make Available
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedFood(food);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                              <span className="text-destructive">Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={food.isAvailable ? "success" : "secondary"}>
+                      {food.isAvailable ? "Available" : "Unavailable"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      <span>{food.preparationTime} min</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleAvailabilityChange(food)}
+                        >
+                          {food.isAvailable ? (
+                            <XCircle className="h-4 w-4" />
+                          ) : (
+                            <CheckCircle2 className="h-4 w-4" />
+                          )}
+                          {food.isAvailable
+                            ? "Make Unavailable"
+                            : "Make Available"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedFood(food);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <XCircle className="h-4 w-4 text-destructive" />
+                          <span className="text-destructive">Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </DataTableRow>
+              ))}
+            </DataTableBody>
+          </DataTable>
 
-          {totalPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  />
-                </PaginationItem>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) pageNum = i + 1;
-                  else if (currentPage <= 3) pageNum = i + 1;
-                  else if (currentPage >= totalPages - 2)
-                    pageNum = totalPages - 4 + i;
-                  else pageNum = currentPage - 2 + i;
-                  return (
-                    <PaginationItem key={pageNum}>
-                      <PaginationLink
-                        isActive={currentPage === pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                      >
-                        {pageNum}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-
-          <div className="mt-4 text-sm text-muted-foreground">
-            Showing {(currentPage - 1) * 10 + 1} to{" "}
-            {Math.min(currentPage * 10, total)} of {total} items
-          </div>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+          <TableFooterText
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            total={total}
+            itemLabel="items"
+          />
         </CardContent>
       </Card>
 
-      <AlertDialog
+      <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Food Item</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete {selectedFood?.name}? This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Delete Food Item"
+        description={`Are you sure you want to delete ${selectedFood?.name}? This action cannot be undone.`}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
-
-import { Trash2 } from "lucide-react";

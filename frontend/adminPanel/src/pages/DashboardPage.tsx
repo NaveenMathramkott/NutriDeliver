@@ -9,15 +9,16 @@ import {
   Package,
   CreditCard,
   DollarSign,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/common";
 import { api } from "@/services/api";
 import type { PlatformAnalytics } from "@/types";
 import { cn } from "@/lib/utils";
+import { ORDER_STATUS_COLORS, formatStatus } from "@/features/orders";
 
 const statCards = [
   {
@@ -65,7 +66,7 @@ const statCards = [
 ];
 
 export function DashboardPage() {
-  const [analytics, setAnalytics] = useState<PlatformAnalytics | null>(null);
+  const [, setAnalytics] = useState<PlatformAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([
     { value: "-", change: "+0%", trend: "up" },
@@ -128,14 +129,10 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Overview of your NutriDeliver platform
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your NutriDeliver platform"
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statCards.map((card, index) => (
@@ -252,8 +249,12 @@ export function DashboardPage() {
                   <div className="text-right">
                     <p className="font-medium">{order.amount}</p>
                     <Badge
-                      variant={getStatusVariant(order.status)}
-                      className="text-xs mt-1"
+                      variant={
+                        ORDER_STATUS_COLORS[
+                          order.status as keyof typeof ORDER_STATUS_COLORS
+                        ] || "default"
+                      }
+                      className="mt-1 text-xs"
                     >
                       {formatStatus(order.status)}
                     </Badge>
@@ -389,30 +390,4 @@ export function DashboardPage() {
       </div>
     </div>
   );
-}
-
-function getStatusVariant(status: string) {
-  switch (status) {
-    case "delivered":
-      return "success";
-    case "out_for_delivery":
-      return "info";
-    case "preparing":
-      return "warning";
-    case "confirmed":
-      return "default";
-    case "pending":
-      return "secondary";
-    case "cancelled":
-      return "destructive";
-    default:
-      return "default";
-  }
-}
-
-function formatStatus(status: string) {
-  return status
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
 }

@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Provider } from "react-redux";
 import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -21,14 +20,28 @@ import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { store } from "@/store";
 import { useAppSelector, useAppDispatch } from "@/store/hooks";
-import { refreshUser } from "@/store/slices/authSlice";
+import { refreshUser, clearSession } from "@/store/slices/authSlice";
+import { setUnauthorizedHandler } from "@/services/api/client";
+import { useNavigate } from "react-router-dom";
 
 function AuthInitializer() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
+  // Re-validate the stored token on boot.
   useEffect(() => {
     dispatch(refreshUser());
   }, [dispatch]);
+
+  // A 401 from any request clears the store and routes to /login through the
+  // router, rather than a hard reload.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      dispatch(clearSession());
+      navigate("/login", { replace: true });
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [dispatch, navigate]);
 
   return null;
 }
