@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
   Truck,
   CheckCircle2,
@@ -16,6 +15,8 @@ import {
   UserX,
   Eye,
   Edit,
+  Shield as ShieldIcon,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,19 +75,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import type { User, RiderProfile, VehicleType } from "@/types";
 
-const statusColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  available: "success",
-  busy: "warning",
-  offline: "secondary",
+const statusColors = {
+  available: "success" as const,
+  busy: "warning" as const,
+  offline: "secondary" as const,
 };
 
 export function RidersPage() {
-  const [riders, setRiders] = useState<any[]>([]);
+  const [riders, setRiders] = useState<
+    (User & { riderProfile: RiderProfile })[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -94,11 +94,15 @@ export function RidersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedRider, setSelectedRider] = useState<any | null>(null);
+  const [selectedRider, setSelectedRider] = useState<
+    (User & { riderProfile: RiderProfile }) | null
+  >(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState("");
+  const [newStatus, setNewStatus] = useState<"available" | "busy" | "offline">(
+    "available",
+  );
 
   const fetchRiders = async () => {
     setIsLoading(true);
@@ -108,17 +112,16 @@ export function RidersPage() {
         limit: 10,
         search: searchQuery,
         status: statusFilter,
-        verified:
-          verifiedFilter === "true"
-            ? true
-            : verifiedFilter === "false"
-              ? false
-              : undefined,
+        verified: verifiedFilter === "" ? undefined : verifiedFilter === "true",
       });
       if (response.success && response.data) {
-        setRiders(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          riders: (User & { riderProfile: RiderProfile })[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setRiders(data.riders);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch riders:", error);
@@ -142,38 +145,47 @@ export function RidersPage() {
     fetchRiders();
   };
 
-  const handleVerify = async (rider: any) => {
+  const handleVerify = async (
+    rider: User & { riderProfile: RiderProfile },
+    isVerified: boolean,
+  ) => {
     try {
-      const response = await api.verifyRider(rider.id);
+      const response = await api.verifyRider(rider._id);
       if (response.success) {
         toast({
           title: "Success",
-          description: "Rider verified",
+          description: `Rider ${isVerified ? "unverified" : "verified"}`,
           variant: "success",
         });
         fetchRiders();
       }
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to verify rider",
+        description: "Failed to update verification",
         variant: "destructive",
       });
     }
   };
 
-  const handleStatusChange = async (rider: any, status: string) => {
+  const handleStatusChange = async (
+    rider: User & { riderProfile: RiderProfile },
+    isActive: boolean,
+  ) => {
     try {
-      const response = await api.updateRiderStatus(rider.id, status);
+      const response = await api.updateRiderStatus(
+        rider._id,
+        isActive ? "active" : "inactive",
+      );
       if (response.success) {
         toast({
           title: "Success",
-          description: `Rider status updated to ${status}`,
+          description: `Rider ${isActive ? "activated" : "deactivated"}`,
           variant: "success",
         });
         fetchRiders();
       }
-    } catch {
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update rider status",
@@ -182,17 +194,17 @@ export function RidersPage() {
     }
   };
 
-  const openDetailDialog = (rider: any) => {
+  const openDetailDialog = (rider: User & { riderProfile: RiderProfile }) => {
     setSelectedRider(rider);
     setIsDetailDialogOpen(true);
   };
-  const openVerifyDialog = (rider: any) => {
+  const openVerifyDialog = (rider: User & { riderProfile: RiderProfile }) => {
     setSelectedRider(rider);
     setIsVerifyDialogOpen(true);
   };
-  const openStatusDialog = (rider: any) => {
+  const openStatusDialog = (rider: User & { riderProfile: RiderProfile }) => {
     setSelectedRider(rider);
-    setNewStatus(rider.status);
+    setNewStatus(rider.riderProfile?.availabilityStatus?.status || "offline");
     setIsStatusDialogOpen(true);
   };
 
@@ -268,7 +280,7 @@ export function RidersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : riders?.length === 0 ? (
+                ) : riders.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={8}
@@ -278,18 +290,25 @@ export function RidersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  riders?.map((rider) => (
-                    <TableRow key={rider.id}>
+                  riders.map((rider) => (
+                    <TableRow key={rider._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={rider.avatar} alt={rider.name} />
+                            <AvatarImage
+                              src={rider.profile.avatar}
+                              alt={rider.profile.firstName}
+                            />
                             <AvatarFallback>
-                              {rider.name.charAt(0).toUpperCase()}
+                              {rider.profile.firstName
+                                ?.charAt(0)
+                                .toUpperCase() || "R"}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{rider.name}</p>
+                            <p className="font-medium">
+                              {rider.profile.firstName} {rider.profile.lastName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {rider.email}
                             </p>
@@ -299,19 +318,24 @@ export function RidersPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="capitalize">
-                            {rider.vehicleType}
+                            {rider.riderProfile?.vehicleType || "N/A"}
                           </span>
                           <span className="text-sm text-muted-foreground">
-                            {rider.vehicleNumber}
+                            {rider.riderProfile?.vehicleNumber || "N/A"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={statusColors[rider.status] || "default"}
-                          className="capitalize"
+                          variant={
+                            statusColors[
+                              rider.riderProfile?.availabilityStatus
+                                ?.status as keyof typeof statusColors
+                            ] || "secondary"
+                          }
                         >
-                          {rider.status}
+                          {rider.riderProfile?.availabilityStatus?.status ||
+                            "offline"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -324,13 +348,17 @@ export function RidersPage() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span>{rider.rating?.toFixed(1) || "0.0"}</span>
+                          <span>N/A</span>
                         </div>
                       </TableCell>
-                      <TableCell>{rider.totalDeliveries || 0}</TableCell>
                       <TableCell>
-                        ${rider.earnings?.thisMonth?.toFixed(2) || "0.00"} /
-                        month
+                        {rider.riderProfile?.earnings?.totalDeliveries || 0}
+                      </TableCell>
+                      <TableCell>
+                        $
+                        {rider.riderProfile?.earnings?.totalEarnings?.toFixed(
+                          2,
+                        ) || "0.00"}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -356,7 +384,7 @@ export function RidersPage() {
                                 <DropdownMenuItem
                                   onClick={() => openVerifyDialog(rider)}
                                 >
-                                  <Shield className="mr-2 h-4 w-4" />
+                                  <ShieldIcon className="mr-2 h-4 w-4" />
                                   Verify Rider
                                 </DropdownMenuItem>
                               </>
@@ -422,7 +450,10 @@ export function RidersPage() {
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedRider?.name}</DialogTitle>
+            <DialogTitle>
+              {selectedRider?.profile.firstName}{" "}
+              {selectedRider?.profile.lastName}
+            </DialogTitle>
             <DialogDescription>Rider Details</DialogDescription>
           </DialogHeader>
           {selectedRider && (
@@ -433,25 +464,34 @@ export function RidersPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">Phone</p>
-                <p className="font-medium">{selectedRider.phone}</p>
+                <p className="font-medium">
+                  {selectedRider.profile.phone || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Vehicle</p>
                 <p className="font-medium capitalize">
-                  {selectedRider.vehicleType} - {selectedRider.vehicleNumber}
+                  {selectedRider.riderProfile?.vehicleType} -{" "}
+                  {selectedRider.riderProfile?.vehicleNumber}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">License</p>
-                <p className="font-medium">{selectedRider.licenseNumber}</p>
+                <p className="font-medium">
+                  {selectedRider.riderProfile?.licenseNumber}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Status</p>
                 <Badge
-                  variant={statusColors[selectedRider.status] || "default"}
-                  className="capitalize"
+                  variant={
+                    statusColors[
+                      selectedRider.riderProfile?.availabilityStatus
+                        ?.status as keyof typeof statusColors
+                    ] || "secondary"
+                  }
                 >
-                  {selectedRider.status}
+                  {selectedRider.riderProfile?.availabilityStatus?.status}
                 </Badge>
               </div>
               <div>
@@ -463,48 +503,33 @@ export function RidersPage() {
                 </Badge>
               </div>
               <div>
-                <p className="text-muted-foreground">Rating</p>
+                <p className="text-muted-foreground">Total Deliveries</p>
                 <p className="font-medium">
-                  {selectedRider.rating?.toFixed(1) || "0.0"}{" "}
-                  <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 inline" />
+                  {selectedRider.riderProfile?.earnings?.totalDeliveries || 0}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Total Deliveries</p>
+                <p className="text-muted-foreground">Total Earnings</p>
                 <p className="font-medium">
-                  {selectedRider.totalDeliveries || 0}
-                </p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-muted-foreground">Earnings</p>
-                <p className="font-medium">
-                  This Month: $
-                  {selectedRider.earnings?.thisMonth?.toFixed(2) || "0.00"} |
-                  Total: ${selectedRider.earnings?.total?.toFixed(2) || "0.00"}
+                  $
+                  {selectedRider.riderProfile?.earnings?.totalEarnings?.toFixed(
+                    2,
+                  ) || "0.00"}
                 </p>
               </div>
               <div className="col-span-2">
                 <p className="text-muted-foreground">Documents</p>
                 <div className="space-y-1">
-                  {selectedRider.documents?.map((doc: any) => (
+                  {selectedRider.riderProfile?.documents?.map((doc) => (
                     <div
-                      key={doc.id}
+                      key={doc.type}
                       className="flex items-center gap-2 text-sm"
                     >
-                      <Badge
-                        variant={
-                          doc.status === "approved"
-                            ? "success"
-                            : doc.status === "pending"
-                              ? "warning"
-                              : "destructive"
-                        }
-                        className="capitalize"
-                      >
-                        {doc.type.replace("_", " ")}
+                      <Badge variant="secondary" className="capitalize">
+                        {doc.type}
                       </Badge>
                       <span className="text-muted-foreground">
-                        {doc.status}
+                        {format(new Date(doc.uploadedAt), "MMM dd, yyyy")}
                       </span>
                     </div>
                   ))}
@@ -528,7 +553,9 @@ export function RidersPage() {
           <DialogHeader>
             <DialogTitle>Verify Rider</DialogTitle>
             <DialogDescription>
-              Verify {selectedRider?.name} to allow them to accept deliveries.
+              Verify {selectedRider?.profile.firstName}{" "}
+              {selectedRider?.profile.lastName} to allow them to accept
+              deliveries.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -540,11 +567,11 @@ export function RidersPage() {
             </Button>
             <Button
               onClick={() => {
-                handleVerify(selectedRider!);
+                handleVerify(selectedRider!, !selectedRider!.isVerified);
                 setIsVerifyDialogOpen(false);
               }}
             >
-              Verify
+              {selectedRider?.isVerified ? "Unverify" : "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -555,11 +582,16 @@ export function RidersPage() {
           <DialogHeader>
             <DialogTitle>Update Rider Status</DialogTitle>
             <DialogDescription>
-              Change status for {selectedRider?.name}
+              Change status for {selectedRider?.profile.firstName}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Select value={newStatus} onValueChange={setNewStatus}>
+            <Select
+              value={newStatus}
+              onValueChange={(value: "available" | "busy" | "offline") =>
+                setNewStatus(value)
+              }
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -579,7 +611,7 @@ export function RidersPage() {
             </Button>
             <Button
               onClick={() => {
-                handleStatusChange(selectedRider!, newStatus);
+                handleStatusChange(selectedRider!, newStatus === "available");
                 setIsStatusDialogOpen(false);
               }}
             >

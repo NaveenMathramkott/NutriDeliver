@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
   CreditCard,
   DollarSign,
@@ -11,6 +10,7 @@ import {
   Eye,
   AlertCircle,
   CheckCircle2,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,30 +68,29 @@ import {
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { Order, PaymentStatus, PaymentMethod } from "@/types";
 
 const statusColors: Record<
-  string,
+  PaymentStatus,
   "default" | "success" | "warning" | "destructive" | "secondary"
 > = {
   pending: "warning",
   paid: "success",
   failed: "destructive",
   refunded: "secondary",
-  partially_refunded: "warning",
 };
 
 const methodColors: Record<
-  string,
+  PaymentMethod,
   "default" | "success" | "warning" | "destructive" | "secondary"
 > = {
   card: "default",
-  wallet: "success",
   cash: "secondary",
-  upi: "default",
+  digital_wallet: "success",
 };
 
 export function PaymentsPage() {
-  const [payments, setPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -99,7 +98,7 @@ export function PaymentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isRefundDialogOpen, setIsRefundDialogOpen] = useState(false);
   const [refundAmount, setRefundAmount] = useState("");
@@ -115,9 +114,13 @@ export function PaymentsPage() {
         method: methodFilter,
       });
       if (response.success && response.data) {
-        setPayments(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          payments: Order[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setPayments(data.payments);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch payments:", error);
@@ -141,14 +144,14 @@ export function PaymentsPage() {
     fetchPayments();
   };
 
-  const openDetailDialog = (payment: any) => {
+  const openDetailDialog = (payment: Order) => {
     setSelectedPayment(payment);
     setIsDetailDialogOpen(true);
   };
 
-  const openRefundDialog = (payment: any) => {
+  const openRefundDialog = (payment: Order) => {
     setSelectedPayment(payment);
-    setRefundAmount(payment.amount.toString());
+    setRefundAmount(payment.grandTotal.toString());
     setRefundReason("");
     setIsRefundDialogOpen(true);
   };
@@ -157,7 +160,7 @@ export function PaymentsPage() {
     if (!selectedPayment || !refundAmount || !refundReason) return;
     try {
       const response = await api.refundPayment(
-        selectedPayment.orderId,
+        selectedPayment._id,
         parseFloat(refundAmount),
         refundReason,
       );
@@ -198,13 +201,19 @@ export function PaymentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">$125,430.00</p>
+                <p className="text-2xl font-bold">
+                  $
+                  {payments
+                    .filter((p) => p.paymentStatus === "paid")
+                    .reduce((sum, p) => sum + p.grandTotal, 0)
+                    .toFixed(2)}
+                </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
                 <DollarSign className="h-6 w-6 text-green-600" />
               </div>
             </div>
-            <p className="mt-2 text-sm text-green-600">+12.5% vs last month</p>
+            <p className="mt-2 text-sm text-green-600">All time</p>
           </CardContent>
         </Card>
         <Card>
@@ -214,29 +223,45 @@ export function PaymentsPage() {
                 <p className="text-sm text-muted-foreground">
                   Pending Payments
                 </p>
-                <p className="text-2xl font-bold">$3,240.00</p>
+                <p className="text-2xl font-bold">
+                  $
+                  {payments
+                    .filter((p) => p.paymentStatus === "pending")
+                    .reduce((sum, p) => sum + p.grandTotal, 0)
+                    .toFixed(2)}
+                </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100">
                 <AlertCircle className="h-6 w-6 text-yellow-600" />
               </div>
             </div>
-            <p className="mt-2 text-sm text-yellow-600">12 pending</p>
+            <p className="mt-2 text-sm text-yellow-600">
+              {payments.filter((p) => p.paymentStatus === "pending").length}{" "}
+              pending
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">
-                  Refunds This Month
+                <p className="text-sm text-muted-foreground">Refunds</p>
+                <p className="text-2xl font-bold">
+                  $
+                  {payments
+                    .filter((p) => p.paymentStatus === "refunded")
+                    .reduce((sum, p) => sum + p.grandTotal, 0)
+                    .toFixed(2)}
                 </p>
-                <p className="text-2xl font-bold">$1,890.00</p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
                 <RotateCcw className="h-6 w-6 text-red-600" />
               </div>
             </div>
-            <p className="mt-2 text-sm text-red-600">8 refunds</p>
+            <p className="mt-2 text-sm text-red-600">
+              {payments.filter((p) => p.paymentStatus === "refunded").length}{" "}
+              refunded
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -244,13 +269,23 @@ export function PaymentsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Success Rate</p>
-                <p className="text-2xl font-bold">98.2%</p>
+                <p className="text-2xl font-bold">
+                  {payments.length > 0
+                    ? (
+                        (payments.filter((p) => p.paymentStatus === "paid")
+                          .length /
+                          payments.length) *
+                        100
+                      ).toFixed(1)
+                    : "100"}
+                  %
+                </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
                 <CheckCircle2 className="h-6 w-6 text-blue-600" />
               </div>
             </div>
-            <p className="mt-2 text-sm text-blue-600">Above average</p>
+            <p className="mt-2 text-sm text-blue-600">All time</p>
           </CardContent>
         </Card>
       </div>
@@ -280,9 +315,6 @@ export function PaymentsPage() {
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
                 <SelectItem value="refunded">Refunded</SelectItem>
-                <SelectItem value="partially_refunded">
-                  Partially Refunded
-                </SelectItem>
               </SelectContent>
             </Select>
             <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -292,9 +324,8 @@ export function PaymentsPage() {
               <SelectContent>
                 <SelectItem value="">All Methods</SelectItem>
                 <SelectItem value="card">Card</SelectItem>
-                <SelectItem value="wallet">Wallet</SelectItem>
                 <SelectItem value="cash">Cash</SelectItem>
-                <SelectItem value="upi">UPI</SelectItem>
+                <SelectItem value="digital_wallet">Digital Wallet</SelectItem>
               </SelectContent>
             </Select>
           </form>
@@ -303,8 +334,7 @@ export function PaymentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Transaction ID</TableHead>
-                  <TableHead>Order</TableHead>
+                  <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Method</TableHead>
@@ -316,60 +346,63 @@ export function PaymentsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       <div className="flex justify-center">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : payments?.length === 0 ? (
+                ) : payments.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={7}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No payments found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  payments?.map((payment) => (
-                    <TableRow key={payment.id}>
+                  payments.map((payment) => (
+                    <TableRow key={payment._id}>
                       <TableCell>
-                        <p className="font-mono text-sm">
-                          {payment.transactionId ||
-                            payment.id.slice(0, 12).toUpperCase()}
-                        </p>
+                        <p className="font-mono text-sm">{payment.orderId}</p>
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">
-                          {payment.orderNumber || "N/A"}
+                          {typeof payment.userId === "object" &&
+                          payment.userId.profile
+                            ? `${payment.userId.profile.firstName} ${payment.userId.profile.lastName}`
+                            : "Unknown"}
                         </p>
-                      </TableCell>
-                      <TableCell>
-                        <p className="font-medium">{payment.userName}</p>
                         <p className="text-sm text-muted-foreground">
-                          {payment.userEmail}
+                          {typeof payment.userId === "object"
+                            ? payment.userId.email
+                            : ""}
                         </p>
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">
-                          ${payment.amount?.toFixed(2)}
+                          ${payment.grandTotal?.toFixed(2)}
                         </p>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={methodColors[payment.method] || "default"}
+                          variant={
+                            methodColors[payment.paymentMethod] || "default"
+                          }
                           className="capitalize"
                         >
-                          {payment.method}
+                          {payment.paymentMethod.replace("_", " ")}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={statusColors[payment.status] || "default"}
+                          variant={
+                            statusColors[payment.paymentStatus] || "default"
+                          }
                           className="capitalize"
                         >
-                          {payment.status.replace(/_/g, " ")}
+                          {payment.paymentStatus}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -398,7 +431,7 @@ export function PaymentsPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            {payment.status === "paid" && (
+                            {payment.paymentStatus === "paid" && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -465,9 +498,7 @@ export function PaymentsPage() {
           <DialogHeader>
             <DialogTitle>Payment Details</DialogTitle>
             <DialogDescription>
-              Transaction #
-              {selectedPayment?.transactionId ||
-                selectedPayment?.id?.slice(0, 8).toUpperCase()}
+              Order #{selectedPayment?.orderId}
             </DialogDescription>
           </DialogHeader>
           {selectedPayment && (
@@ -475,37 +506,38 @@ export function PaymentsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Order</p>
-                  <p className="font-medium">{selectedPayment.orderNumber}</p>
+                  <p className="font-medium">{selectedPayment.orderId}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Customer</p>
-                  <p className="font-medium">{selectedPayment.userName}</p>
+                  <p className="font-medium">
+                    {typeof selectedPayment.userId === "object" &&
+                    selectedPayment.userId.profile
+                      ? `${selectedPayment.userId.profile.firstName} ${selectedPayment.userId.profile.lastName}`
+                      : "Unknown"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Amount</p>
                   <p className="font-medium text-xl">
-                    ${selectedPayment.amount?.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Currency</p>
-                  <p className="font-medium">
-                    {selectedPayment.currency || "USD"}
+                    ${selectedPayment.grandTotal?.toFixed(2)}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Method</p>
                   <p className="font-medium capitalize">
-                    {selectedPayment.method}
+                    {selectedPayment.paymentMethod.replace("_", " ")}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Status</p>
                   <Badge
-                    variant={statusColors[selectedPayment.status] || "default"}
+                    variant={
+                      statusColors[selectedPayment.paymentStatus] || "default"
+                    }
                     className="capitalize"
                   >
-                    {selectedPayment.status.replace(/_/g, " ")}
+                    {selectedPayment.paymentStatus}
                   </Badge>
                 </div>
                 <div className="col-span-2">
@@ -536,7 +568,7 @@ export function PaymentsPage() {
           <DialogHeader>
             <DialogTitle>Process Refund</DialogTitle>
             <DialogDescription>
-              Order #{selectedPayment?.orderNumber}
+              Order #{selectedPayment?.orderId}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -550,10 +582,10 @@ export function PaymentsPage() {
                 onChange={(e) => setRefundAmount(e.target.value)}
                 placeholder="0.00"
                 required
-                max={selectedPayment?.amount}
+                max={selectedPayment?.grandTotal}
               />
               <p className="text-sm text-muted-foreground">
-                Max: ${selectedPayment?.amount?.toFixed(2)}
+                Max: ${selectedPayment?.grandTotal?.toFixed(2)}
               </p>
             </div>
             <div className="space-y-2">

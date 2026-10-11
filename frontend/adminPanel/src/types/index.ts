@@ -1,124 +1,7 @@
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  phone?: string;
-  role: "user" | "restaurant" | "rider" | "admin";
-  status: "active" | "inactive" | "banned";
-  avatar?: string;
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt?: string;
-}
-
-export interface Restaurant {
-  id: string;
-  name: string;
-  description?: string;
-  address: string;
-  phone: string;
-  email: string;
-  cuisine: string[];
-  image?: string;
-  coverImage?: string;
-  isOpen: boolean;
-  isVerified: boolean;
-  status: "active" | "inactive" | "pending" | "rejected";
-  rating: number;
-  deliveryFee: number;
-  minOrderAmount: number;
-  deliveryRadius: number;
-  operatingHours: OperatingHours;
-  ownerId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface OperatingHours {
-  monday: DayHours;
-  tuesday: DayHours;
-  wednesday: DayHours;
-  thursday: DayHours;
-  friday: DayHours;
-  saturday: DayHours;
-  sunday: DayHours;
-}
-
-export interface DayHours {
-  open: string;
-  close: string;
-  isClosed: boolean;
-}
-
-export interface FoodItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  category: string;
-  image?: string;
-  images?: string[];
-  restaurantId: string;
-  restaurantName: string;
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  isVegan: boolean;
-  isGlutenFree: boolean;
-  preparationTime: number;
-  calories?: number;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Order {
-  id: string;
-  orderNumber: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  userPhone: string;
-  restaurantId: string;
-  restaurantName: string;
-  riderId?: string;
-  riderName?: string;
-  items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number;
-  tax: number;
-  discount: number;
-  total: number;
-  status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  paymentMethod: string;
-  deliveryAddress: Address;
-  notes?: string;
-  estimatedDeliveryTime?: string;
-  actualDeliveryTime?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface OrderItem {
-  id: string;
-  foodId: string;
-  foodName: string;
-  quantity: number;
-  price: number;
-  total: number;
-  notes?: string;
-}
+// ─────────────────────────────────────────────
+// Enums / Unions
+// ─────────────────────────────────────────────
+export type UserRole = "user" | "restaurant" | "rider" | "admin";
 
 export type OrderStatus =
   | "pending"
@@ -130,163 +13,363 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentStatus =
-  | "pending"
-  | "paid"
-  | "failed"
-  | "refunded"
-  | "partially_refunded";
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+export type PaymentMethod = "card" | "cash" | "digital_wallet";
+export type AddressType = "home" | "work" | "other";
+
+export type CuisineType =
+  | "healthy"
+  | "salads"
+  | "protein"
+  | "vegan"
+  | "vegetarian"
+  | "gluten-free"
+  | "keto"
+  | "mediterranean"
+  | "smoothies";
+
+export type DietaryTag =
+  | "vegan"
+  | "vegetarian"
+  | "gluten-free"
+  | "dairy-free"
+  | "nut-free"
+  | "low-carb"
+  | "high-protein"
+  | "keto"
+  | "paleo"
+  | "sugar-free"
+  | "organic"
+  | "non-gmo";
+
+export type VehicleType = "bicycle" | "motorcycle" | "car" | "scooter";
+
+// ─────────────────────────────────────────────
+// Response envelopes
+// ─────────────────────────────────────────────
+export interface ApiSuccess<T> {
+  success: true;
+  message: string;
+  data: T;
+}
+
+export type ApiResponse<T> = ApiSuccess<T> | ApiError;
+
+export interface ApiError {
+  success: false;
+  message: string;
+  errors?: { field: string; message: string }[];
+}
+
+export interface Pagination {
+  current: number;
+  pages: number;
+  total: number;
+}
+
+export interface PaginatedResponse<T> {
+  pagination: Pagination;
+  [key: string]: T[] | Pagination;
+}
+
+// ─────────────────────────────────────────────
+// Models
+// ─────────────────────────────────────────────
+export interface UserProfile {
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  avatar?: string;
+  dateOfBirth?: string;
+}
 
 export interface Address {
-  id: string;
+  type: AddressType;
   street: string;
   city: string;
   state: string;
   zipCode: string;
-  country: string;
-  isDefault: boolean;
-  label?: string;
+  coordinates?: { lat: number; lng: number };
 }
 
-export interface Payment {
-  id: string;
-  orderId: string;
-  orderNumber: string;
-  userId: string;
-  userName: string;
-  amount: number;
-  currency: string;
-  method: "card" | "wallet" | "cash" | "upi";
-  status: PaymentStatus;
-  transactionId?: string;
-  refundId?: string;
-  refundAmount?: number;
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface RiderProfile {
+  vehicleType: VehicleType;
+  vehicleNumber: string;
+  licenseNumber: string;
+  isOnline: boolean;
+  availabilityStatus: {
+    status: "available" | "busy" | "offline";
+    lastUpdated?: string;
+  };
+  currentLocation?: Coordinates & { lastUpdated: string };
+  documents?: { type: string; url: string; uploadedAt: string }[];
+  earnings: {
+    totalEarnings: number;
+    pendingPayout: number;
+    totalDeliveries: number;
+  };
+}
+
+export interface User {
+  _id: string;
+  email: string;
+  role: UserRole;
+  profile: UserProfile & {
+    lastLoginAt?: string;
+  };
+  preferences?: {
+    dietaryRestrictions?: string[];
+    allergies?: string[];
+    calorieGoal?: number;
+  };
+  addresses?: Address[];
+  notificationPreferences?: { email: boolean; push: boolean; sms: boolean };
+  restaurantProfile?: {
+    restaurantId: string;
+    roleInRestaurant: "owner";
+    permissions: string[];
+  };
+  riderProfile?: RiderProfile;
+  permissions?: string[];
+  isActive: boolean;
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Restaurant {
+  _id: string;
+  ownerId: string;
+  name: string;
+  description: string;
+  cuisineType: CuisineType;
+  contact: {
+    email: string;
+    phone: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      coordinates: Coordinates;
+    };
+  };
+  operatingHours: { opening: string; closing: string; days: string[] };
+  deliverySettings: {
+    deliveryFee: number;
+    minOrderAmount: number;
+    deliveryRadius: number;
+    estimatedDeliveryTime: number;
+  };
+  rating: number;
+  totalReviews: number;
+  images: string[];
+  isActive: boolean;
+  isVerified: boolean;
+  isOpen: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FoodItem {
+  _id: string;
+  restaurantId:
+    | string
+    | Pick<Restaurant, "_id" | "name" | "rating" | "images" | "isOpen">;
+  categoryId: string | { _id: string; name: string };
+  name: string;
+  description: string;
+  price: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  ingredients: string[];
+  dietaryTags: DietaryTag[];
+  preparationTime: number;
+  images: string[];
+  isAvailable: boolean;
+  totalOrders: number;
+  rating: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OrderItem {
+  foodItemId: string | Partial<FoodItem>;
+  name: string;
+  quantity: number;
+  price: number;
+  specialInstructions?: string;
+  customization?: { option: string; choice: string; price: number }[];
+}
+
+export interface Order {
+  _id: string;
+  orderId: string;
+  userId: string | Partial<User>;
+  restaurantId: string | Partial<Restaurant>;
+  riderId?: string | Partial<User>;
+  items: OrderItem[];
+  orderTotal: number;
+  deliveryFee: number;
+  tax: number;
+  grandTotal: number;
+  deliveryAddress: Address;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod;
+  estimatedDelivery?: string;
+  preparationTime?: number;
+  specialInstructions?: string;
+  rating?: number;
+  review?: string;
+  appliedOffer?: { offerId: string; code: string; discountAmount: number };
+  deliveryDetails?: {
+    riderId?: string;
+    assignedAt?: string;
+    pickedUpAt?: string;
+    deliveredAt?: string;
+    estimatedPickupTime?: string;
+    estimatedDeliveryTime?: string;
+    riderLocationUpdates?: { coordinates: Coordinates; timestamp: string }[];
+    deliveryProof?: { image?: string; signature?: string; notes?: string };
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CartItem {
+  _id: string;
+  foodItemId: string | Partial<FoodItem>;
+  quantity: number;
+  price: number;
+  specialInstructions?: string;
+}
+
+export interface Cart {
+  _id: string;
+  userId: string;
+  restaurantId?: string | Pick<Restaurant, "_id" | "name" | "images">;
+  items: CartItem[];
+  totalAmount: number;
+  appliedOffer?: {
+    offerId: string;
+    code: string;
+    discountAmount: number;
+  } | null;
 }
 
 export interface Offer {
-  id: string;
+  _id: string;
   code: string;
-  name: string;
+  title: string;
   description: string;
-  type: "percentage" | "fixed" | "free_delivery";
-  value: number;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
   minOrderAmount: number;
   maxDiscount?: number;
-  usageLimit: number;
-  usageCount: number;
-  userLimit: number;
-  startDate: string;
-  endDate: string;
+  validFrom: string;
+  validUntil: string;
+  applicableCategories: string[];
+  applicableRestaurants: string[];
+  usageLimit?: number;
+  usedCount: number;
   isActive: boolean;
-  applicableRestaurants?: string[];
-  applicableCategories?: string[];
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface Notification {
-  id: string;
+  _id: string;
   userId: string;
   title: string;
   message: string;
-  type: "order" | "promotion" | "system" | "payment" | "delivery";
+  type: "order" | "payment" | "promotion" | "system" | "delivery";
   isRead: boolean;
-  actionUrl?: string;
+  relatedData?: Record<string, unknown>;
   createdAt: string;
 }
 
-export interface Rider {
-  id: string;
-  userId: string;
+export interface Category {
+  _id: string;
   name: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  vehicleType: "bicycle" | "motorcycle" | "car" | "scooter";
-  vehicleNumber: string;
-  licenseNumber: string;
-  status: "available" | "busy" | "offline";
-  isVerified: boolean;
-  rating: number;
-  totalDeliveries: number;
-  currentLocation?: {
-    lat: number;
-    lng: number;
-  };
-  earnings: {
-    total: number;
-    thisMonth: number;
-    thisWeek: number;
-  };
-  documents: RiderDocument[];
+  description: string;
+  image: string;
+  isActive: boolean;
   createdAt: string;
-  updatedAt: string;
 }
 
-export interface RiderDocument {
-  id: string;
-  type: "license" | "vehicle_registration" | "insurance" | "id_proof";
-  url: string;
-  status: "pending" | "approved" | "rejected";
-  uploadedAt: string;
-}
-
-export interface Admin {
-  id: string;
-  email: string;
-  name: string;
-  role: "super_admin" | "admin" | "manager" | "support";
-  permissions: string[];
-  lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Analytics {
-  overview: {
-    totalUsers: number;
-    totalRestaurants: number;
-    totalRiders: number;
-    totalOrders: number;
-    totalRevenue: number;
-    avgOrderValue: number;
+// ─────────────────────────────────────────────
+// Admin Analytics
+// ─────────────────────────────────────────────
+export interface PlatformAnalytics {
+  analytics: {
+    users: {
+      total: number;
+      new: number;
+      byRole: { _id: UserRole; count: number }[];
+    };
+    restaurants: {
+      total: number;
+      active: number;
+      verified: number;
+    };
+    orders: {
+      total: number;
+      recent: number;
+      byStatus: { _id: OrderStatus; count: number }[];
+    };
+    revenue: { totalRevenue: number; recentRevenue: number };
   };
-  sales: {
-    date: string;
-    orders: number;
-    revenue: number;
-  }[];
-  users: {
-    date: string;
-    newUsers: number;
-    activeUsers: number;
-  }[];
+}
+
+export interface SalesAnalytics {
+  salesOverTime: { _id: string; orders: number; revenue: number }[];
   topRestaurants: {
-    id: string;
-    name: string;
+    _id: string;
     orders: number;
     revenue: number;
+    restaurant: Restaurant;
   }[];
-  topCategories: {
-    category: string;
-    orders: number;
-    revenue: number;
+  popularItems: {
+    _id: string;
+    totalQuantity: number;
+    totalRevenue: number;
+    foodItem: FoodItem;
   }[];
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+export interface UserAnalytics {
+  userGrowth: { _id: string; newUsers: number }[];
+  activeUsers: number;
+  avgOrderValue: {
+    _id: UserRole;
+    avgOrderValue: number;
+    totalOrders: number;
+  }[];
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data?: T;
-  errors?: string[];
+export interface SystemSettings {
+  settings: {
+    platformName: string;
+    supportEmail: string;
+    defaultDeliveryFee: number;
+    taxRate: number;
+    maxDeliveryRadius: number;
+    freeDeliveryThreshold: number;
+    sessionTimeout: number;
+    maxLoginAttempts: number;
+    passwordMinLength: number;
+    stripePublishableKey: string;
+    stripeSecretKey: string;
+    minOrderAmount: number;
+    commissionRate: number;
+    maxMenuItems: number;
+    riderTimeout: number;
+  };
 }

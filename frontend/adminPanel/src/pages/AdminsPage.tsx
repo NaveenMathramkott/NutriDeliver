@@ -71,26 +71,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { User, UserRole } from "@/types";
 
 const roleColors: Record<
-  string,
+  UserRole,
   "default" | "success" | "warning" | "destructive" | "secondary"
 > = {
-  super_admin: "destructive",
-  admin: "default",
-  manager: "success",
-  support: "warning",
+  user: "default",
+  restaurant: "success",
+  rider: "warning",
+  admin: "destructive",
 };
 
 export function AdminsPage() {
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedAdmin, setSelectedAdmin] = useState<any | null>(null);
+  const [selectedAdmin, setSelectedAdmin] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -99,7 +100,6 @@ export function AdminsPage() {
     name: "",
     role: "admin",
     permissions: [] as string[],
-    password: "",
   });
 
   const fetchAdmins = async () => {
@@ -112,9 +112,13 @@ export function AdminsPage() {
         role: roleFilter,
       });
       if (response.success && response.data) {
-        setAdmins(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          users: User[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setAdmins(data.users.filter((u) => u.role === "admin"));
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch admins:", error);
@@ -141,24 +145,17 @@ export function AdminsPage() {
   const openCreateDialog = () => {
     setIsEditing(false);
     setSelectedAdmin(null);
-    setFormData({
-      email: "",
-      name: "",
-      role: "admin",
-      permissions: [],
-      password: "",
-    });
+    setFormData({ email: "", name: "", role: "admin", permissions: [] });
     setIsDialogOpen(true);
   };
-  const openEditDialog = (admin: any) => {
+  const openEditDialog = (admin: User) => {
     setIsEditing(true);
     setSelectedAdmin(admin);
     setFormData({
       email: admin.email,
-      name: admin.name,
+      name: `${admin.profile.firstName} ${admin.profile.lastName}`,
       role: admin.role,
       permissions: admin.permissions || [],
-      password: "",
     });
     setIsDialogOpen(true);
   };
@@ -168,13 +165,18 @@ export function AdminsPage() {
     try {
       let response;
       if (isEditing && selectedAdmin) {
-        response = await api.updateAdmin(selectedAdmin.id, {
+        response = await api.updateAdmin(selectedAdmin._id, {
           name: formData.name,
           role: formData.role,
           permissions: formData.permissions,
         });
       } else {
-        response = await api.createAdmin(formData);
+        response = await api.createAdmin({
+          email: formData.email,
+          name: formData.name,
+          role: formData.role,
+          permissions: formData.permissions,
+        });
       }
       if (response.success) {
         toast({
@@ -199,7 +201,7 @@ export function AdminsPage() {
   const handleDelete = async () => {
     if (!selectedAdmin) return;
     try {
-      const response = await api.deleteAdmin(selectedAdmin.id);
+      const response = await api.deleteAdmin(selectedAdmin._id);
       if (response.success) {
         toast({
           title: "Success",
@@ -279,10 +281,7 @@ export function AdminsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Roles</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
-                <SelectItem value="support">Support</SelectItem>
               </SelectContent>
             </Select>
           </form>
@@ -294,6 +293,7 @@ export function AdminsPage() {
                   <TableHead>Admin</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Permissions</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Last Login</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -302,34 +302,39 @@ export function AdminsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       <div className="flex justify-center">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : admins?.length === 0 ? (
+                ) : admins.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No admins found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  admins?.map((admin) => (
-                    <TableRow key={admin.id}>
+                  admins.map((admin) => (
+                    <TableRow key={admin._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={admin.avatar} alt={admin.name} />
+                            <AvatarImage
+                              src={admin.profile.avatar}
+                              alt={admin.profile.firstName}
+                            />
                             <AvatarFallback>
-                              {admin.name.charAt(0).toUpperCase()}
+                              {admin.profile.firstName?.charAt(0).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{admin.name}</p>
+                            <p className="font-medium">
+                              {admin.profile.firstName} {admin.profile.lastName}
+                            </p>
                             <p className="text-sm text-muted-foreground">
                               {admin.email}
                             </p>
@@ -341,7 +346,7 @@ export function AdminsPage() {
                           variant={roleColors[admin.role] || "default"}
                           className="capitalize"
                         >
-                          {admin.role.replace("_", " ")}
+                          {admin.role}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -364,10 +369,17 @@ export function AdminsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <Badge
+                          variant={admin.isActive ? "success" : "secondary"}
+                        >
+                          {admin.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {admin.lastLoginAt
+                          {admin.profile.lastLoginAt
                             ? format(
-                                new Date(admin.lastLoginAt),
+                                new Date(admin.profile.lastLoginAt),
                                 "MMM dd, yyyy",
                               )
                             : "Never"}
@@ -465,8 +477,8 @@ export function AdminsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Admin</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedAdmin?.name}? This action
-              cannot be undone.
+              Are you sure you want to delete {selectedAdmin?.profile.firstName}{" "}
+              {selectedAdmin?.profile.lastName}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -521,10 +533,6 @@ export function AdminsPage() {
                 <Input
                   id="password"
                   type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
                   placeholder="••••••••"
                   required
                 />
@@ -540,10 +548,7 @@ export function AdminsPage() {
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="support">Support</SelectItem>
                 </SelectContent>
               </Select>
             </div>

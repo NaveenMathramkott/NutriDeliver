@@ -3,10 +3,8 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
   Bell,
-  Mail,
   CheckCircle2,
   XCircle,
   Eye,
@@ -15,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -69,20 +66,22 @@ import {
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { Notification } from "@/types";
 
 const typeColors: Record<
-  string,
+  Notification["type"],
   "default" | "success" | "warning" | "destructive" | "secondary" | "info"
 > = {
   order: "info",
+  payment: "success",
   promotion: "warning",
   system: "default",
-  payment: "success",
   delivery: "info",
 };
 
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -90,9 +89,8 @@ export function NotificationsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedNotification, setSelectedNotification] = useState<any | null>(
-    null,
-  );
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -102,28 +100,22 @@ export function NotificationsPage() {
       const response = await api.getNotifications({
         page: currentPage,
         limit: 10,
+        type: typeFilter,
         isRead:
           readFilter === "true"
             ? true
             : readFilter === "false"
               ? false
               : undefined,
-        type: typeFilter,
       });
       if (response.success && response.data) {
-        let filtered = response.data.data;
-        if (searchQuery) {
-          filtered = filtered.filter(
-            (n) =>
-              n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              n.message.toLowerCase().includes(searchQuery.toLowerCase()),
-          );
-        }
-        setTotal(filtered.length);
-        setTotalPages(Math.ceil(filtered.length / 10));
-        setNotifications(
-          filtered.slice((currentPage - 1) * 10, currentPage * 10),
-        );
+        const data = response.data as {
+          notifications: Notification[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setNotifications(data.notifications);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
@@ -147,11 +139,11 @@ export function NotificationsPage() {
     fetchNotifications();
   };
 
-  const openDetailDialog = (notification: any) => {
+  const openDetailDialog = (notification: Notification) => {
     setSelectedNotification(notification);
     setIsDetailDialogOpen(true);
     if (!notification.isRead) {
-      api.markAsRead(notification.id);
+      api.markAsRead(notification._id);
       fetchNotifications();
     }
   };
@@ -159,7 +151,7 @@ export function NotificationsPage() {
   const handleDelete = async () => {
     if (!selectedNotification) return;
     try {
-      const response = await api.deleteNotification(selectedNotification.id);
+      const response = await api.deleteNotification(selectedNotification._id);
       if (response.success) {
         toast({
           title: "Success",
@@ -232,9 +224,9 @@ export function NotificationsPage() {
               <SelectContent>
                 <SelectItem value="">All Types</SelectItem>
                 <SelectItem value="order">Order</SelectItem>
+                <SelectItem value="payment">Payment</SelectItem>
                 <SelectItem value="promotion">Promotion</SelectItem>
                 <SelectItem value="system">System</SelectItem>
-                <SelectItem value="payment">Payment</SelectItem>
                 <SelectItem value="delivery">Delivery</SelectItem>
               </SelectContent>
             </Select>
@@ -271,7 +263,7 @@ export function NotificationsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : notifications?.length === 0 ? (
+                ) : notifications.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={6}
@@ -281,10 +273,10 @@ export function NotificationsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  notifications?.map((notification) => (
+                  notifications.map((notification) => (
                     <TableRow
-                      key={notification.id}
-                      className={notification.isRead ? "" : "bg-muted/30"}
+                      key={notification._id}
+                      className={cn(!notification.isRead && "bg-muted/30")}
                     >
                       <TableCell>
                         <p
@@ -350,7 +342,7 @@ export function NotificationsPage() {
                             {!notification.isRead && (
                               <DropdownMenuItem
                                 onClick={() => {
-                                  api.markAsRead(notification.id);
+                                  api.markAsRead(notification._id);
                                   fetchNotifications();
                                 }}
                               >
@@ -484,15 +476,12 @@ export function NotificationsPage() {
                 <p className="text-muted-foreground">Message</p>
                 <p>{selectedNotification.message}</p>
               </div>
-              {selectedNotification.actionUrl && (
-                <div>
-                  <p className="text-muted-foreground">Action URL</p>
-                  <a
-                    href={selectedNotification.actionUrl}
-                    className="text-primary hover:underline"
-                  >
-                    {selectedNotification.actionUrl}
-                  </a>
+              {selectedNotification.relatedData && (
+                <div className="border-t pt-4">
+                  <p className="text-muted-foreground">Related Data</p>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-auto">
+                    {JSON.stringify(selectedNotification.relatedData, null, 2)}
+                  </pre>
                 </div>
               )}
             </div>

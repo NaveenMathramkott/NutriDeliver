@@ -3,17 +3,15 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
-  Edit,
-  Trash2,
-  Utensils,
   CheckCircle2,
   XCircle,
+  Utensils,
   Tag,
   DollarSign,
   Clock,
-  Image as ImageIcon,
+  Flame,
+  FlameIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,30 +66,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-const statusColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  active: "success",
-  inactive: "secondary",
-};
+import { format } from "date-fns";
+import type { FoodItem, Category } from "@/types";
 
 export function FoodPage() {
-  const [foods, setFoods] = useState<any[]>([]);
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [availabilityFilter, setAvailabilityFilter] = useState("");
-  const [restaurantFilter, setRestaurantFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedFood, setSelectedFood] = useState<any | null>(null);
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const fetchFoods = async () => {
@@ -108,12 +99,15 @@ export function FoodPage() {
             : availabilityFilter === "false"
               ? false
               : undefined,
-        restaurantId: restaurantFilter,
       });
       if (response.success && response.data) {
-        setFoods(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          foodItems: FoodItem[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setFoods(data.foodItems);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch foods:", error);
@@ -127,15 +121,21 @@ export function FoodPage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await api.getCategories();
+      if (response.success && response.data) {
+        setCategories(response.data as Category[]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
   useEffect(() => {
     fetchFoods();
-  }, [
-    currentPage,
-    searchQuery,
-    categoryFilter,
-    availabilityFilter,
-    restaurantFilter,
-  ]);
+    fetchCategories();
+  }, [currentPage, searchQuery, categoryFilter, availabilityFilter]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,13 +143,13 @@ export function FoodPage() {
     fetchFoods();
   };
 
-  const handleAvailabilityChange = async (food: any) => {
+  const handleAvailabilityChange = async (food: FoodItem) => {
     try {
-      const response = await api.toggleFoodAvailability(food.id);
+      const response = await api.toggleFoodAvailability(food._id);
       if (response.success) {
         toast({
           title: "Success",
-          description: `Food availability toggled`,
+          description: `Food availability updated`,
           variant: "success",
         });
         fetchFoods();
@@ -166,7 +166,7 @@ export function FoodPage() {
   const handleDelete = async () => {
     if (!selectedFood) return;
     try {
-      const response = await api.deleteFood(selectedFood.id);
+      const response = await api.deleteFood(selectedFood._id);
       if (response.success) {
         toast({
           title: "Success",
@@ -217,11 +217,11 @@ export function FoodPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Categories</SelectItem>
-                <SelectItem value="pizza">Pizza</SelectItem>
-                <SelectItem value="burger">Burger</SelectItem>
-                <SelectItem value="sushi">Sushi</SelectItem>
-                <SelectItem value="pasta">Pasta</SelectItem>
-                <SelectItem value="salad">Salad</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select
@@ -247,8 +247,9 @@ export function FoodPage() {
                   <TableHead>Restaurant</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Nutrition</TableHead>
+                  <TableHead>Dietary Tags</TableHead>
                   <TableHead>Availability</TableHead>
-                  <TableHead>Dietary</TableHead>
                   <TableHead>Prep Time</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -256,28 +257,31 @@ export function FoodPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="flex justify-center">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : foods?.length === 0 ? (
+                ) : foods.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No food items found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  foods?.map((food) => (
-                    <TableRow key={food.id}>
+                  foods.map((food) => (
+                    <TableRow key={food._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10">
-                            <AvatarImage src={food.image} alt={food.name} />
+                            <AvatarImage
+                              src={food.images?.[0]}
+                              alt={food.name}
+                            />
                             <AvatarFallback>
                               <Utensils className="h-4 w-4" />
                             </AvatarFallback>
@@ -291,24 +295,48 @@ export function FoodPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{food.restaurantName}</p>
+                        <p className="font-medium">
+                          {typeof food.restaurantId === "object"
+                            ? food.restaurantId.name
+                            : "N/A"}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="gap-1">
                           <Tag className="h-3 w-3" />
-                          {food.category}
+                          {typeof food.categoryId === "object"
+                            ? food.categoryId.name
+                            : "N/A"}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-3 w-3 text-muted-foreground" />
                           <span>${food.price.toFixed(2)}</span>
-                          {food.originalPrice &&
-                            food.originalPrice > food.price && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ${food.originalPrice.toFixed(2)}
-                              </span>
-                            )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>
+                            <Flame className="h-3 w-3 inline mr-1" />{" "}
+                            {food.calories} cal
+                          </span>
+                          <span>P: {food.protein}g</span>
+                          <span>C: {food.carbs}g</span>
+                          <span>F: {food.fat}g</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {food.dietaryTags?.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-xs h-5 px-2 capitalize"
+                            >
+                              {tag.replace("-", " ")}
+                            </Badge>
+                          ))}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -317,34 +345,6 @@ export function FoodPage() {
                         >
                           {food.isAvailable ? "Available" : "Unavailable"}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-xs">
-                          {food.isVegetarian && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs h-5 px-2"
-                            >
-                              Veg
-                            </Badge>
-                          )}
-                          {food.isVegan && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs h-5 px-2"
-                            >
-                              Vegan
-                            </Badge>
-                          )}
-                          {food.isGlutenFree && (
-                            <Badge
-                              variant="outline"
-                              className="text-xs h-5 px-2"
-                            >
-                              GF
-                            </Badge>
-                          )}
-                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -466,3 +466,5 @@ export function FoodPage() {
     </div>
   );
 }
+
+import { Trash2 } from "lucide-react";

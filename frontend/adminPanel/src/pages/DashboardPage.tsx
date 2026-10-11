@@ -10,52 +10,62 @@ import {
   CreditCard,
   DollarSign,
   TrendingUp,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/services/api";
-import type { Analytics } from "@/types";
+import type { PlatformAnalytics } from "@/types";
 import { cn } from "@/lib/utils";
 
 const statCards = [
-  { name: "Total Users", icon: Users, color: "bg-blue-500", href: "/users" },
+  {
+    name: "Total Users",
+    icon: Users,
+    color: "bg-blue-500",
+    href: "/users",
+    key: "users",
+  },
   {
     name: "Total Restaurants",
     icon: Store,
     color: "bg-green-500",
     href: "/restaurants",
+    key: "restaurants",
   },
   {
     name: "Active Riders",
     icon: Truck,
     color: "bg-orange-500",
     href: "/riders",
+    key: "riders",
   },
   {
     name: "Total Orders",
     icon: Package,
     color: "bg-purple-500",
     href: "/orders",
+    key: "orders",
   },
   {
     name: "Total Revenue",
     icon: DollarSign,
     color: "bg-emerald-500",
     href: "/analytics",
+    key: "revenue",
   },
   {
     name: "Pending Payments",
     icon: CreditCard,
     color: "bg-yellow-500",
     href: "/payments",
+    key: "payments",
   },
 ];
 
 export function DashboardPage() {
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [analytics, setAnalytics] = useState<PlatformAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState([
     { value: "-", change: "+0%", trend: "up" },
@@ -71,39 +81,35 @@ export function DashboardPage() {
       try {
         const response = await api.getPlatformAnalytics();
         if (response.success && response.data) {
-          setAnalytics(response.data);
+          setAnalytics(response.data as any);
+          const data = response.data as any;
           setStats([
             {
-              value: response.data.overview.totalUsers.toLocaleString(),
-              change: "+12%",
+              value: data.analytics.users.total.toLocaleString(),
+              change: `+${data.analytics.users.new}%`,
               trend: "up",
             },
             {
-              value: response.data.overview.totalRestaurants.toLocaleString(),
-              change: "+8%",
+              value: data.analytics.restaurants.total.toLocaleString(),
+              change: `+${data.analytics.restaurants.verified}%`,
+              trend: "up",
+            },
+            { value: "N/A", change: "+0%", trend: "up" },
+            {
+              value: data.analytics.orders.total.toLocaleString(),
+              change: `+${data.analytics.orders.recent}%`,
               trend: "up",
             },
             {
-              value: response.data.overview.totalRiders.toLocaleString(),
-              change: "+5%",
+              value: `$${data.analytics.revenue.totalRevenue.toLocaleString()}`,
+              change: `+${data.analytics.revenue.recentRevenue}%`,
               trend: "up",
             },
-            {
-              value: response.data.overview.totalOrders.toLocaleString(),
-              change: "+15%",
-              trend: "up",
-            },
-            {
-              value: `$${response.data.overview.totalRevenue.toLocaleString()}`,
-              change: "+22%",
-              trend: "up",
-            },
-            { value: "$0", change: "-3%", trend: "down" },
+            { value: "$0", change: "-0%", trend: "down" },
           ]);
         }
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
-        // Set mock data for demo
         setStats([
           { value: "12,345", change: "+12%", trend: "up" },
           { value: "567", change: "+8%", trend: "up" },
@@ -133,7 +139,7 @@ export function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {statCards.map((card, index) => (
-          <Link key={card.name} to={card.href} className="group">
+          <Link key={card.key} to={card.href} className="group">
             <Card className="transition-all hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -179,7 +185,7 @@ export function DashboardPage() {
                     )}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    vs last month
+                    vs last period
                   </span>
                 </div>
               </CardContent>
@@ -190,42 +196,42 @@ export function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
+          <CardHeader className="pb-2">
+            <h3 className="text-lg font-semibold">Recent Orders</h3>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {[
                 {
-                  id: "#ORD-001",
+                  id: "ND-20261011-001",
                   customer: "John Doe",
                   restaurant: "Pizza Palace",
                   amount: "$45.50",
                   status: "delivered",
                 },
                 {
-                  id: "#ORD-002",
+                  id: "ND-20261011-002",
                   customer: "Jane Smith",
                   restaurant: "Burger Barn",
                   amount: "$32.00",
                   status: "out_for_delivery",
                 },
                 {
-                  id: "#ORD-003",
+                  id: "ND-20261011-003",
                   customer: "Bob Wilson",
                   restaurant: "Sushi Central",
                   amount: "$67.80",
                   status: "preparing",
                 },
                 {
-                  id: "#ORD-004",
+                  id: "ND-20261011-004",
                   customer: "Alice Brown",
                   restaurant: "Taco Town",
                   amount: "$28.90",
                   status: "confirmed",
                 },
                 {
-                  id: "#ORD-005",
+                  id: "ND-20261011-005",
                   customer: "Charlie Davis",
                   restaurant: "Pasta Place",
                   amount: "$54.20",
@@ -259,8 +265,8 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Top Restaurants</CardTitle>
+          <CardHeader className="pb-2">
+            <h3 className="text-lg font-semibold">Top Restaurants</h3>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -322,8 +328,8 @@ export function DashboardPage() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
+          <CardHeader className="pb-2">
+            <h3 className="text-lg font-semibold">Sales Overview</h3>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-end justify-around p-4">
@@ -354,8 +360,8 @@ export function DashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Order Status Distribution</CardTitle>
+          <CardHeader className="pb-2">
+            <h3 className="text-lg font-semibold">Order Status Distribution</h3>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

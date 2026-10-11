@@ -3,14 +3,14 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
-  Edit,
-  Trash2,
   Plus,
   Tag,
+  Edit,
+  Trash2,
   CheckCircle2,
   XCircle,
+  Image,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,24 +67,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-
-const statusColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  active: "success",
-  inactive: "secondary",
-};
+import { format } from "date-fns";
+import type { Category } from "@/types";
 
 export function CategoriesPage() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -100,7 +96,8 @@ export function CategoriesPage() {
     try {
       const response = await api.getCategories();
       if (response.success && response.data) {
-        let filtered = response.data;
+        const categories = response.data as Category[];
+        let filtered = categories;
         if (searchQuery) {
           filtered = filtered.filter((c) =>
             c.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -108,7 +105,7 @@ export function CategoriesPage() {
         }
         if (statusFilter) {
           filtered = filtered.filter(
-            (c) => c.isActive === (statusFilter === "active"),
+            (c) => c.isActive === (statusFilter === "true"),
           );
         }
         setTotal(filtered.length);
@@ -144,13 +141,13 @@ export function CategoriesPage() {
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (category: any) => {
+  const openEditDialog = (category: Category) => {
     setIsEditing(true);
     setSelectedCategory(category);
     setFormData({
       name: category.name,
-      description: category.description || "",
-      image: category.image || "",
+      description: category.description,
+      image: category.image,
       isActive: category.isActive,
     });
     setIsDialogOpen(true);
@@ -161,7 +158,7 @@ export function CategoriesPage() {
     try {
       let response;
       if (isEditing && selectedCategory) {
-        response = await api.updateCategory(selectedCategory.id, formData);
+        response = await api.updateCategory(selectedCategory._id, formData);
       } else {
         response = await api.createCategory(formData);
       }
@@ -188,7 +185,7 @@ export function CategoriesPage() {
   const handleDelete = async () => {
     if (!selectedCategory) return;
     try {
-      const response = await api.deleteCategory(selectedCategory.id);
+      const response = await api.deleteCategory(selectedCategory._id);
       if (response.success) {
         toast({
           title: "Success",
@@ -243,8 +240,8 @@ export function CategoriesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </form>
@@ -269,7 +266,7 @@ export function CategoriesPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : categories?.length === 0 ? (
+                ) : categories.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={5}
@@ -279,8 +276,8 @@ export function CategoriesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  categories?.map((category) => (
-                    <TableRow key={category.id}>
+                  categories.map((category) => (
+                    <TableRow key={category._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">

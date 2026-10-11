@@ -126,16 +126,16 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                {user?.avatar ? (
+                {user?.profile?.avatar ? (
                   <AvatarImage
-                    src={user.avatar}
-                    alt={user.name}
+                    src={user.profile.avatar}
+                    alt={`${user.profile.firstName} ${user.profile.lastName}`}
                     className="h-10 w-10 rounded-lg"
                   />
                 ) : (
                   <Avatar>
                     <AvatarFallback className="text-sm font-medium text-primary-foreground">
-                      {user?.name?.charAt(0).toUpperCase() || "A"}
+                      {user?.profile?.firstName?.charAt(0).toUpperCase() || "A"}
                     </AvatarFallback>
                   </Avatar>
                 )}
@@ -143,7 +143,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-2">
-                <p className="font-medium">{user?.name}</p>
+                <p className="font-medium">{user?.profile?.firstName} {user?.profile?.lastName}</p>
                 <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
               <DropdownMenuSeparator />

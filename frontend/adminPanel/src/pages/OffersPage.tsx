@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
   Plus,
   Tag,
@@ -72,51 +71,55 @@ import {
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { Offer } from "@/types";
 
-const statusColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  active: "success",
-  inactive: "secondary",
-};
-
-const typeColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  percentage: "default",
-  fixed: "success",
-  free_delivery: "warning",
+const typeColors = {
+  percentage: "default" as const,
+  fixed: "success" as const,
 };
 
 export function OffersPage() {
-  const [offers, setOffers] = useState<any[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedOffer, setSelectedOffer] = useState<any | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    code: string;
+    title: string;
+    description: string;
+    discountType: "percentage" | "fixed";
+    discountValue: number;
+    minOrderAmount: number;
+    maxDiscount: number;
+    usageLimit: number;
+    usedCount: number;
+    validFrom: string;
+    validUntil: string;
+    isActive: boolean;
+    applicableCategories: string[];
+    applicableRestaurants: string[];
+  }>({
     code: "",
-    name: "",
+    title: "",
     description: "",
-    type: "percentage",
-    value: 0,
+    discountType: "percentage",
+    discountValue: 0,
     minOrderAmount: 0,
     maxDiscount: 0,
     usageLimit: 0,
-    userLimit: 1,
-    startDate: "",
-    endDate: "",
+    usedCount: 0,
+    validFrom: "",
+    validUntil: "",
     isActive: true,
-    applicableRestaurants: [],
     applicableCategories: [],
+    applicableRestaurants: [],
   });
 
   const fetchOffers = async () => {
@@ -126,24 +129,20 @@ export function OffersPage() {
         page: currentPage,
         limit: 10,
         isActive:
-          statusFilter === "active"
+          statusFilter === "true"
             ? true
-            : statusFilter === "inactive"
+            : statusFilter === "false"
               ? false
               : undefined,
       });
       if (response.success && response.data) {
-        let filtered = response.data.data;
-        if (searchQuery) {
-          filtered = filtered.filter(
-            (o) =>
-              o.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              o.name.toLowerCase().includes(searchQuery.toLowerCase()),
-          );
-        }
-        setTotal(filtered.length);
-        setTotalPages(Math.ceil(filtered.length / 10));
-        setOffers(filtered.slice((currentPage - 1) * 10, currentPage * 10));
+        const data = response.data as {
+          offers: Offer[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setOffers(data.offers);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch offers:", error);
@@ -172,41 +171,41 @@ export function OffersPage() {
     setSelectedOffer(null);
     setFormData({
       code: "",
-      name: "",
+      title: "",
       description: "",
-      type: "percentage",
-      value: 0,
+      discountType: "percentage",
+      discountValue: 0,
       minOrderAmount: 0,
       maxDiscount: 0,
       usageLimit: 0,
-      userLimit: 1,
-      startDate: "",
-      endDate: "",
+      usedCount: 0,
+      validFrom: "",
+      validUntil: "",
       isActive: true,
-      applicableRestaurants: [],
       applicableCategories: [],
+      applicableRestaurants: [],
     });
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (offer: any) => {
+  const openEditDialog = (offer: Offer) => {
     setIsEditing(true);
     setSelectedOffer(offer);
     setFormData({
       code: offer.code,
-      name: offer.name,
-      description: offer.description || "",
-      type: offer.type,
-      value: offer.value,
+      title: offer.title,
+      description: offer.description,
+      discountType: offer.discountType,
+      discountValue: offer.discountValue,
       minOrderAmount: offer.minOrderAmount,
       maxDiscount: offer.maxDiscount || 0,
-      usageLimit: offer.usageLimit,
-      userLimit: offer.userLimit,
-      startDate: offer.startDate?.split("T")[0] || "",
-      endDate: offer.endDate?.split("T")[0] || "",
+      usageLimit: offer.usageLimit || 0,
+      usedCount: offer.usedCount,
+      validFrom: offer.validFrom?.split("T")[0] || "",
+      validUntil: offer.validUntil?.split("T")[0] || "",
       isActive: offer.isActive,
-      applicableRestaurants: offer.applicableRestaurants || [],
       applicableCategories: offer.applicableCategories || [],
+      applicableRestaurants: offer.applicableRestaurants || [],
     });
     setIsDialogOpen(true);
   };
@@ -214,9 +213,12 @@ export function OffersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = isEditing
-        ? await api.updateOffer(selectedOffer!.id, formData)
-        : await api.createOffer(formData);
+      let response;
+      if (isEditing && selectedOffer) {
+        response = await api.updateOffer(selectedOffer._id, formData);
+      } else {
+        response = await api.createOffer(formData);
+      }
       if (response.success) {
         toast({
           title: "Success",
@@ -240,7 +242,7 @@ export function OffersPage() {
   const handleDelete = async () => {
     if (!selectedOffer) return;
     try {
-      const response = await api.deleteOffer(selectedOffer.id);
+      const response = await api.deleteOffer(selectedOffer._id);
       if (response.success) {
         toast({
           title: "Success",
@@ -297,8 +299,8 @@ export function OffersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </form>
@@ -308,7 +310,7 @@ export function OffersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
+                  <TableHead>Title</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Min Order</TableHead>
@@ -327,7 +329,7 @@ export function OffersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : offers?.length === 0 ? (
+                ) : offers.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={9}
@@ -337,40 +339,44 @@ export function OffersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  offers?.map((offer) => (
-                    <TableRow key={offer.id}>
+                  offers.map((offer) => (
+                    <TableRow key={offer._id}>
                       <TableCell>
                         <p className="font-mono font-medium">{offer.code}</p>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{offer.name}</p>
+                        <p className="font-medium">{offer.title}</p>
                         <p className="text-sm text-muted-foreground truncate max-w-[200px]">
                           {offer.description}
                         </p>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={typeColors[offer.type] || "default"}
+                          variant={typeColors[offer.discountType] || "default"}
                           className="capitalize"
                         >
-                          {offer.type.replace("_", " ")}
+                          {offer.discountType}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {offer.type === "percentage"
-                          ? `${offer.value}%`
-                          : offer.type === "fixed"
-                            ? `$${offer.value}`
-                            : "Free Delivery"}
+                        {offer.discountType === "percentage"
+                          ? `${offer.discountValue}%`
+                          : `$${offer.discountValue.toFixed(2)}`}
+                        {offer.maxDiscount &&
+                          offer.discountType === "percentage" && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              (max ${offer.maxDiscount})
+                            </span>
+                          )}
                       </TableCell>
-                      <TableCell>${offer.minOrderAmount}</TableCell>
+                      <TableCell>${offer.minOrderAmount.toFixed(2)}</TableCell>
                       <TableCell>
-                        {offer.usageCount}/{offer.usageLimit}
+                        {offer.usedCount}/{offer.usageLimit || "∞"}
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {format(new Date(offer.startDate), "MMM dd")} -{" "}
-                          {format(new Date(offer.endDate), "MMM dd")}
+                          {format(new Date(offer.validFrom), "MMM dd")} -{" "}
+                          {format(new Date(offer.validUntil), "MMM dd, yyyy")}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -467,8 +473,8 @@ export function OffersPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Offer</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedOffer?.name}? This action
-              cannot be undone.
+              Are you sure you want to delete {selectedOffer?.title}? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -507,12 +513,12 @@ export function OffersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="title">Title *</Label>
               <Input
-                id="name"
-                value={formData.name}
+                id="title"
+                value={formData.title}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setFormData({ ...formData, title: e.target.value })
                 }
                 placeholder="Summer Sale"
                 required
@@ -530,10 +536,12 @@ export function OffersPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="type">Type *</Label>
+              <Label htmlFor="discountType">Type *</Label>
               <Select
-                value={formData.type}
-                onValueChange={(v) => setFormData({ ...formData, type: v })}
+                value={formData.discountType}
+                onValueChange={(v: "percentage" | "fixed") =>
+                  setFormData({ ...formData, discountType: v })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
@@ -541,33 +549,27 @@ export function OffersPage() {
                 <SelectContent>
                   <SelectItem value="percentage">Percentage</SelectItem>
                   <SelectItem value="fixed">Fixed Amount</SelectItem>
-                  <SelectItem value="free_delivery">Free Delivery</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="value">Value *</Label>
+              <Label htmlFor="discountValue">Value *</Label>
               <Input
-                id="value"
+                id="discountValue"
                 type="number"
                 step="0.01"
                 min="0"
-                value={formData.value}
+                value={formData.discountValue}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    value: parseFloat(e.target.value) || 0,
+                    discountValue: parseFloat(e.target.value) || 0,
                   })
                 }
                 placeholder={
-                  formData.type === "percentage"
-                    ? "20"
-                    : formData.type === "fixed"
-                      ? "10.00"
-                      : "N/A"
+                  formData.discountType === "percentage" ? "20" : "10.00"
                 }
                 required
-                disabled={formData.type === "free_delivery"}
               />
             </div>
             <div className="space-y-2">
@@ -603,15 +605,15 @@ export function OffersPage() {
                   })
                 }
                 placeholder="50.00"
-                disabled={formData.type !== "percentage"}
+                disabled={formData.discountType !== "percentage"}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="usageLimit">Usage Limit *</Label>
+              <Label htmlFor="usageLimit">Usage Limit</Label>
               <Input
                 id="usageLimit"
                 type="number"
-                min="1"
+                min="0"
                 value={formData.usageLimit}
                 onChange={(e) =>
                   setFormData({
@@ -619,48 +621,30 @@ export function OffersPage() {
                     usageLimit: parseInt(e.target.value) || 0,
                   })
                 }
-                placeholder="100"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="userLimit">User Limit *</Label>
-              <Input
-                id="userLimit"
-                type="number"
-                min="1"
-                value={formData.userLimit}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    userLimit: parseInt(e.target.value) || 1,
-                  })
-                }
-                placeholder="1"
-                required
+                placeholder="100 (0 = unlimited)"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Start Date *</Label>
+                <Label htmlFor="validFrom">Valid From *</Label>
                 <Input
-                  id="startDate"
+                  id="validFrom"
                   type="date"
-                  value={formData.startDate}
+                  value={formData.validFrom}
                   onChange={(e) =>
-                    setFormData({ ...formData, startDate: e.target.value })
+                    setFormData({ ...formData, validFrom: e.target.value })
                   }
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate">End Date *</Label>
+                <Label htmlFor="validUntil">Valid Until *</Label>
                 <Input
-                  id="endDate"
+                  id="validUntil"
                   type="date"
-                  value={formData.endDate}
+                  value={formData.validUntil}
                   onChange={(e) =>
-                    setFormData({ ...formData, endDate: e.target.value })
+                    setFormData({ ...formData, validUntil: e.target.value })
                   }
                   required
                 />
@@ -686,13 +670,34 @@ export function OffersPage() {
             <Button
               type="submit"
               form={undefined}
-              onClick={() => document.querySelector("form")?.requestSubmit()}
+              onClick={() => {
+                document.querySelector("form")?.requestSubmit();
+              }}
             >
               {isEditing ? "Update" : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Offer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedOffer?.title}? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

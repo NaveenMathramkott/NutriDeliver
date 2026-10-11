@@ -69,7 +69,7 @@ export function Sidebar() {
               </span>
             )}
           </Link>
-          <button
+          {/* <button
             onClick={() => dispatch(toggleSidebarCollapsed())}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
             aria-label={
@@ -81,7 +81,7 @@ export function Sidebar() {
             ) : (
               <ChevronLeft className="h-4 w-4" />
             )}
-          </button>
+          </button> */}
         </div>
 
         <nav
@@ -120,22 +120,22 @@ export function Sidebar() {
             )}
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-              {user?.avatar ? (
+              {user?.profile?.avatar ? (
                 <img
-                  src={user.avatar}
+                  src={user.profile.avatar}
                   alt=""
                   className="h-8 w-8 rounded-full"
                 />
               ) : (
                 <span className="text-sm font-medium text-primary-foreground">
-                  {user?.name?.charAt(0).toUpperCase() || "A"}
+                  {user?.profile?.firstName?.charAt(0).toUpperCase() || "A"}
                 </span>
               )}
             </div>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {user?.name}
+                  {user?.profile?.firstName} {user?.profile?.lastName}
                 </p>
                 <p className="text-xs text-muted-foreground truncate capitalize">
                   {user?.role}

@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, PaginatedResponse } from "../../types";
 import { apiClient } from "./client";
 
 export const settingsApi = {

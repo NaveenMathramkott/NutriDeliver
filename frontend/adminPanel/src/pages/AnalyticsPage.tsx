@@ -27,87 +27,48 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
-
-interface AnalyticsData {
-  overview: {
-    totalUsers: number;
-    totalRestaurants: number;
-    totalRiders: number;
-    totalOrders: number;
-    totalRevenue: number;
-    avgOrderValue: number;
-  };
-  sales: { date: string; orders: number; revenue: number }[];
-  users: { date: string; newUsers: number; activeUsers: number }[];
-  topRestaurants: {
-    id: string;
-    name: string;
-    orders: number;
-    revenue: number;
-  }[];
-  topCategories: { category: string; orders: number; revenue: number }[];
-}
+import type { PlatformAnalytics, SalesAnalytics, UserAnalytics } from "@/types";
 
 export function AnalyticsPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [platformAnalytics, setPlatformAnalytics] =
+    useState<PlatformAnalytics | null>(null);
+  const [salesAnalytics, setSalesAnalytics] = useState<SalesAnalytics | null>(
+    null,
+  );
+  const [userAnalytics, setUserAnalytics] = useState<UserAnalytics | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState("30d");
-  const [startDate, setStartDate] = useState(
-    format(subDays(new Date(), 30), "yyyy-MM-dd"),
-  );
-  const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [activeTab, setActiveTab] = useState("overview");
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
     try {
-      const response = await api.getPlatformAnalytics();
-      if (response.success && response.data) {
-        setAnalytics(response.data);
-      }
+      const groupBy =
+        dateRange === "7d"
+          ? "day"
+          : dateRange === "30d"
+            ? "day"
+            : dateRange === "90d"
+              ? "week"
+              : "month";
+      const [platformRes, salesRes, usersRes] = await Promise.all([
+        api.getPlatformAnalytics(),
+        api.getSalesAnalytics({ groupBy }),
+        api.getUserAnalytics(),
+      ]);
+      if (platformRes.success) setPlatformAnalytics(platformRes.data as any);
+      if (salesRes.success) setSalesAnalytics(salesRes.data as any);
+      if (usersRes.success) setUserAnalytics(usersRes.data as any);
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
       toast({
         title: "Error",
         description: "Failed to fetch analytics",
         variant: "destructive",
-      });
-      // Mock data for demo
-      setAnalytics({
-        overview: {
-          totalUsers: 12345,
-          totalRestaurants: 567,
-          totalRiders: 89,
-          totalOrders: 45678,
-          totalRevenue: 1234567,
-          avgOrderValue: 27.03,
-        },
-        sales: Array.from({ length: 30 }, (_, i) => ({
-          date: format(subDays(new Date(), 29 - i), "yyyy-MM-dd"),
-          orders: Math.floor(Math.random() * 200) + 50,
-          revenue: Math.floor(Math.random() * 5000) + 1000,
-        })),
-        users: Array.from({ length: 30 }, (_, i) => ({
-          date: format(subDays(new Date(), 29 - i), "yyyy-MM-dd"),
-          newUsers: Math.floor(Math.random() * 20) + 5,
-          activeUsers: Math.floor(Math.random() * 500) + 100,
-        })),
-        topRestaurants: [
-          { id: "1", name: "Pizza Palace", orders: 1234, revenue: 45670 },
-          { id: "2", name: "Burger Barn", orders: 987, revenue: 34560 },
-          { id: "3", name: "Sushi Central", orders: 876, revenue: 52340 },
-          { id: "4", name: "Taco Town", orders: 654, revenue: 23450 },
-          { id: "5", name: "Pasta Place", orders: 543, revenue: 29870 },
-        ],
-        topCategories: [
-          { category: "Pizza", orders: 15678, revenue: 456780 },
-          { category: "Burger", orders: 12345, revenue: 345670 },
-          { category: "Sushi", orders: 9876, revenue: 523450 },
-          { category: "Pasta", orders: 8765, revenue: 298760 },
-          { category: "Salad", orders: 5432, revenue: 123450 },
-        ],
       });
     } finally {
       setIsLoading(false);
@@ -116,26 +77,11 @@ export function AnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [dateRange]);
 
   const handleDateRangeChange = (range: string) => {
     setDateRange(range);
-    const now = new Date();
-    switch (range) {
-      case "7d":
-        setStartDate(format(subDays(now, 7), "yyyy-MM-dd"));
-        break;
-      case "30d":
-        setStartDate(format(subDays(now, 30), "yyyy-MM-dd"));
-        break;
-      case "90d":
-        setStartDate(format(subDays(now, 90), "yyyy-MM-dd"));
-        break;
-      case "1y":
-        setStartDate(format(subDays(now, 365), "yyyy-MM-dd"));
-        break;
-    }
-    setEndDate(format(now, "yyyy-MM-dd"));
+    fetchAnalytics();
   };
 
   return (
@@ -162,13 +108,13 @@ export function AnalyticsPage() {
           <Button variant="outline" size="icon">
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={fetchAnalytics}>
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {analytics && (
+      {platformAnalytics && !isLoading && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           <Card>
             <CardContent className="p-6">
@@ -178,7 +124,7 @@ export function AnalyticsPage() {
                     Total Users
                   </p>
                   <p className="text-2xl font-bold">
-                    {analytics?.overview?.totalUsers.toLocaleString()}
+                    {platformAnalytics.analytics.users.total.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
@@ -186,7 +132,7 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-green-600">
-                +12.5% vs last period
+                +{platformAnalytics.analytics.users.new} this month
               </p>
             </CardContent>
           </Card>
@@ -198,7 +144,7 @@ export function AnalyticsPage() {
                     Total Restaurants
                   </p>
                   <p className="text-2xl font-bold">
-                    {analytics?.overview?.totalRestaurants.toLocaleString()}
+                    {platformAnalytics.analytics.restaurants.total.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
@@ -206,7 +152,7 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-green-600">
-                +8.2% vs last period
+                {platformAnalytics.analytics.restaurants.active} active
               </p>
             </CardContent>
           </Card>
@@ -215,18 +161,16 @@ export function AnalyticsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Active Riders
+                    Total Riders
                   </p>
-                  <p className="text-2xl font-bold">
-                    {analytics?.overview?.totalRiders.toLocaleString()}
-                  </p>
+                  <p className="text-2xl font-bold">N/A</p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100">
                   <Truck className="h-6 w-6 text-orange-600" />
                 </div>
               </div>
-              <p className="mt-2 text-sm text-green-600">
-                +5.1% vs last period
+              <p className="mt-2 text-sm text-muted-foreground">
+                Data not available
               </p>
             </CardContent>
           </Card>
@@ -238,7 +182,7 @@ export function AnalyticsPage() {
                     Total Orders
                   </p>
                   <p className="text-2xl font-bold">
-                    {analytics?.overview?.totalOrders.toLocaleString()}
+                    {platformAnalytics.analytics.orders.total.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100">
@@ -246,7 +190,7 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-green-600">
-                +15.3% vs last period
+                {platformAnalytics.analytics.orders.recent} recent
               </p>
             </CardContent>
           </Card>
@@ -258,7 +202,8 @@ export function AnalyticsPage() {
                     Total Revenue
                   </p>
                   <p className="text-2xl font-bold">
-                    ${analytics?.overview?.totalRevenue.toLocaleString()}
+                    $
+                    {platformAnalytics.analytics.revenue.totalRevenue.toLocaleString()}
                   </p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100">
@@ -266,7 +211,9 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <p className="mt-2 text-sm text-green-600">
-                +22.1% vs last period
+                $
+                {platformAnalytics.analytics.revenue.recentRevenue.toLocaleString()}{" "}
+                recent
               </p>
             </CardContent>
           </Card>
@@ -278,16 +225,19 @@ export function AnalyticsPage() {
                     Avg Order Value
                   </p>
                   <p className="text-2xl font-bold">
-                    ${analytics?.overview?.avgOrderValue.toFixed(2)}
+                    $
+                    {platformAnalytics.analytics.orders.total > 0
+                      ? (
+                          platformAnalytics.analytics.revenue.totalRevenue /
+                          platformAnalytics.analytics.orders.total
+                        ).toFixed(2)
+                      : "0.00"}
                   </p>
                 </div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-100">
                   <BarChart3 className="h-6 w-6 text-cyan-600" />
                 </div>
               </div>
-              <p className="mt-2 text-sm text-green-600">
-                +3.2% vs last period
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -309,50 +259,52 @@ export function AnalyticsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Sales Trend</CardTitle>
+                <CardTitle>Orders by Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80 flex items-end justify-around p-4">
-                  {analytics?.sales?.slice(-14).map((day) => (
-                    <div
-                      key={day.date}
-                      className="flex flex-col items-center gap-2 w-full"
-                    >
+                <div className="h-64 flex items-end justify-around p-4">
+                  {platformAnalytics?.analytics.orders.byStatus?.map(
+                    (status) => (
                       <div
-                        className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
-                        style={{
-                          height: `${Math.max(5, (day.revenue / (Math.max(...analytics?.sales.map((d) => d.revenue)) || 1)) * 100)}%`,
-                        }}
-                        title={`$${day.revenue.toLocaleString()}`}
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(day.date), "MMM dd")}
-                      </span>
-                    </div>
-                  ))}
+                        key={status._id}
+                        className="flex flex-col items-center gap-2 w-full"
+                      >
+                        <div
+                          className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
+                          style={{
+                            height: `${platformAnalytics.analytics.orders.total > 0 ? (status.count / platformAnalytics.analytics.orders.total) * 100 : 0}%`,
+                          }}
+                          title={`${status._id}: ${status.count}`}
+                        />
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {status._id.replace("_", " ")}
+                        </span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>User Growth</CardTitle>
+                <CardTitle>Users by Role</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-80 flex items-end justify-around p-4">
-                  {analytics?.users?.slice(-14).map((day) => (
+                <div className="h-64 flex items-end justify-around p-4">
+                  {platformAnalytics?.analytics.users.byRole?.map((role) => (
                     <div
-                      key={day.date}
+                      key={role._id}
                       className="flex flex-col items-center gap-2 w-full"
                     >
                       <div
                         className="w-full bg-green-500 rounded-t transition-all hover:bg-green-500/80"
                         style={{
-                          height: `${Math.max(5, (day.newUsers / (Math.max(...analytics?.users.map((d) => d.newUsers)) || 1)) * 100)}%`,
+                          height: `${platformAnalytics.analytics.users.total > 0 ? (role.count / platformAnalytics.analytics.users.total) * 100 : 0}%`,
                         }}
-                        title={day.newUsers.toString()}
+                        title={`${role._id}: ${role.count}`}
                       />
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(day.date), "MMM dd")}
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {role._id}
                       </span>
                     </div>
                   ))}
@@ -365,40 +317,91 @@ export function AnalyticsPage() {
         <TabsContent value="sales">
           <Card>
             <CardHeader>
-              <CardTitle>Sales Data</CardTitle>
+              <CardTitle>Sales Over Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4">Date</th>
-                      <th className="text-left p-4">Orders</th>
-                      <th className="text-left p-4">Revenue</th>
-                      <th className="text-left p-4">Avg Order Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analytics?.sales
-                      ?.slice(-30)
-                      .reverse()
-                      .map((day) => (
-                        <tr key={day.date} className="border-b">
-                          <td className="p-4">
-                            {format(new Date(day.date), "MMM dd, yyyy")}
-                          </td>
-                          <td className="p-4">{day.orders.toLocaleString()}</td>
-                          <td className="p-4 font-medium">
-                            ${day.revenue.toLocaleString()}
-                          </td>
-                          <td className="p-4">
-                            $
-                            {(day.revenue / Math.max(day.orders, 1)).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+              <div className="h-80 flex items-end justify-around p-4">
+                {salesAnalytics?.salesOverTime?.map((day) => (
+                  <div
+                    key={day._id}
+                    className="flex flex-col items-center gap-2 w-full"
+                  >
+                    <div
+                      className="w-full bg-primary rounded-t transition-all hover:bg-primary/80"
+                      style={{
+                        height: `${salesAnalytics.salesOverTime.length > 0 ? (day.revenue / Math.max(...salesAnalytics.salesOverTime.map((d) => d.revenue))) * 100 : 0}%`,
+                      }}
+                      title={`$${day.revenue.toLocaleString()}`}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {day._id}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Restaurants</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {salesAnalytics?.topRestaurants?.map((r, index) => (
+                  <div
+                    key={r._id}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">
+                        {r.restaurant?.name || "Unknown"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {r.orders.toLocaleString()} orders
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        ${r.revenue.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Popular Items</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {salesAnalytics?.popularItems?.map((item, index) => (
+                  <div
+                    key={item._id}
+                    className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {item.foodItem?.name || "Unknown"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {item.totalQuantity} sold
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        ${item.totalRevenue.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -407,112 +410,109 @@ export function AnalyticsPage() {
         <TabsContent value="users">
           <Card>
             <CardHeader>
-              <CardTitle>User Analytics</CardTitle>
+              <CardTitle>User Growth</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-4">Date</th>
-                      <th className="text-left p-4">New Users</th>
-                      <th className="text-left p-4">Active Users</th>
-                      <th className="text-left p-4">Retention Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analytics?.users
-                      ?.slice(-30)
-                      .reverse()
-                      .map((day) => (
-                        <tr key={day.date} className="border-b">
-                          <td className="p-4">
-                            {format(new Date(day.date), "MMM dd, yyyy")}
-                          </td>
-                          <td className="p-4">{day.newUsers}</td>
-                          <td className="p-4">{day.activeUsers}</td>
-                          <td className="p-4">
-                            {(
-                              (day.activeUsers /
-                                Math.max(day.newUsers * 7, 1)) *
-                              100
-                            ).toFixed(1)}
-                            %
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+              <div className="h-80 flex items-end justify-around p-4">
+                {userAnalytics?.userGrowth?.map((day) => (
+                  <div
+                    key={day._id}
+                    className="flex flex-col items-center gap-2 w-full"
+                  >
+                    <div
+                      className="w-full bg-green-500 rounded-t transition-all hover:bg-green-500/80"
+                      style={{
+                        height: `${userAnalytics.userGrowth.length > 0 ? (day.newUsers / Math.max(...userAnalytics.userGrowth.map((d) => d.newUsers))) * 100 : 0}%`,
+                      }}
+                      title={day.newUsers.toString()}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {day._id}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <p className="text-4xl font-bold">
+                  {userAnalytics?.activeUsers?.toLocaleString() || 0}
+                </p>
+                <p className="text-muted-foreground">ordered in last 30 days</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Avg Order Value by Role</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {userAnalytics?.avgOrderValue?.map((role) => (
+                  <div
+                    key={role._id}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                        {role._id}
+                      </div>
+                      <span className="capitalize">{role._id}</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">
+                        ${role.avgOrderValue.toFixed(2)}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {role.totalOrders} orders
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="restaurants">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Restaurants by Orders</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analytics?.topRestaurants?.map((restaurant, index) => (
-                    <div
-                      key={restaurant.id}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {restaurant.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {restaurant.orders.toLocaleString()} orders
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          ${restaurant.revenue.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Categories by Revenue</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {analytics?.topCategories?.map((cat, index) => (
-                    <div
-                      key={cat.category}
-                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{cat.category}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {cat.orders.toLocaleString()} orders
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">
-                          ${cat.revenue.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Restaurant Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-3">
+                <Card className="bg-green-50 border-green-200">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-3xl font-bold text-green-700">
+                      {platformAnalytics?.analytics.restaurants.total || 0}
+                    </p>
+                    <p className="text-green-600">Total</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-blue-50 border-blue-200">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-3xl font-bold text-blue-700">
+                      {platformAnalytics?.analytics.restaurants.active || 0}
+                    </p>
+                    <p className="text-blue-600">Active</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-50 border-purple-200">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-3xl font-bold text-purple-700">
+                      {platformAnalytics?.analytics.restaurants.verified || 0}
+                    </p>
+                    <p className="text-purple-600">Verified</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

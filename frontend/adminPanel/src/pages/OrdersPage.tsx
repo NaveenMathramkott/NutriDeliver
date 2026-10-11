@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
   Package,
   Truck,
@@ -14,6 +13,10 @@ import {
   XCircle,
   Eye,
   DollarSign,
+  MapPin as MapPinIcon,
+  User,
+  ChefHat,
+  Bike,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,9 +74,11 @@ import {
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { Order, OrderStatus, PaymentStatus } from "@/types";
 
 const statusColors: Record<
-  string,
+  OrderStatus,
   "default" | "success" | "warning" | "destructive" | "secondary" | "info"
 > = {
   pending: "warning",
@@ -87,27 +92,37 @@ const statusColors: Record<
 };
 
 const paymentStatusColors: Record<
-  string,
+  PaymentStatus,
   "default" | "success" | "warning" | "destructive" | "secondary"
 > = {
   pending: "warning",
   paid: "success",
   failed: "destructive",
   refunded: "secondary",
-  partially_refunded: "warning",
 };
 
+const statusOrder: OrderStatus[] = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "ready_for_pickup",
+  "pickedup",
+  "out_for_delivery",
+  "delivered",
+  "cancelled",
+];
+
 export function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState("");
+  const [newStatus, setNewStatus] = useState<OrderStatus>("pending");
 
   const fetchOrders = async () => {
     setIsLoading(true);
@@ -118,9 +133,13 @@ export function OrdersPage() {
         status: statusFilter,
       });
       if (response.success && response.data) {
-        setOrders(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          orders: Order[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setOrders(data.orders);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch orders:", error);
@@ -144,22 +163,21 @@ export function OrdersPage() {
     fetchOrders();
   };
 
-  const openDetailDialog = (order: any) => {
+  const openDetailDialog = (order: Order) => {
     setSelectedOrder(order);
-    setNewStatus(order.status);
     setIsDetailDialogOpen(true);
   };
 
   const handleStatusChange = async () => {
     if (!selectedOrder || !newStatus) return;
     try {
-      const response = await api.updateOrder(selectedOrder.id, {
+      const response = await api.updateOrder(selectedOrder._id, {
         status: newStatus,
       });
       if (response.success) {
         toast({
           title: "Success",
-          description: `Order status updated to ${newStatus}`,
+          description: `Order status updated to ${newStatus.replace("_", " ")}`,
           variant: "success",
         });
         fetchOrders();
@@ -172,6 +190,13 @@ export function OrdersPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
+    const currentIndex = statusOrder.indexOf(currentStatus);
+    if (currentIndex === -1 || currentIndex === statusOrder.length - 1)
+      return [];
+    return statusOrder.slice(currentIndex + 1, currentIndex + 2);
   };
 
   return (
@@ -206,18 +231,11 @@ export function OrdersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="confirmed">Confirmed</SelectItem>
-                <SelectItem value="preparing">Preparing</SelectItem>
-                <SelectItem value="ready_for_pickup">
-                  Ready for Pickup
-                </SelectItem>
-                <SelectItem value="pickedup">Picked Up</SelectItem>
-                <SelectItem value="out_for_delivery">
-                  Out for Delivery
-                </SelectItem>
-                <SelectItem value="delivered">Delivered</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                {statusOrder.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.replace(/_/g, " ")}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </form>
@@ -226,7 +244,7 @@ export function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order #</TableHead>
+                  <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
                   <TableHead>Restaurant</TableHead>
                   <TableHead>Items</TableHead>
@@ -246,7 +264,7 @@ export function OrdersPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : orders?.length === 0 ? (
+                ) : orders.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={9}
@@ -256,22 +274,32 @@ export function OrdersPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  orders?.map((order) => (
-                    <TableRow key={order.id}>
+                  orders.map((order) => (
+                    <TableRow key={order._id}>
                       <TableCell>
-                        <p className="font-mono font-medium">
-                          {order.orderNumber ||
-                            order.id.slice(0, 8).toUpperCase()}
-                        </p>
+                        <p className="font-mono font-medium">{order.orderId}</p>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{order.userName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.userEmail}
-                        </p>
+                        <div>
+                          <p className="font-medium">
+                            {typeof order.userId === "object" &&
+                            order.userId.profile
+                              ? `${order.userId.profile.firstName} ${order.userId.profile.lastName}`
+                              : "Unknown"}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {order.userId && typeof order.userId === "object"
+                              ? order.userId.email
+                              : ""}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{order.restaurantName}</p>
+                        <p className="font-medium">
+                          {typeof order.restaurantId === "object"
+                            ? order.restaurantId.name
+                            : "Unknown"}
+                        </p>
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
@@ -280,7 +308,7 @@ export function OrdersPage() {
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">
-                          ${order.total?.toFixed(2) || "0.00"}
+                          ${order.grandTotal?.toFixed(2) || "0.00"}
                         </p>
                       </TableCell>
                       <TableCell>
@@ -400,9 +428,7 @@ export function OrdersPage() {
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>
-              Order #
-              {selectedOrder?.orderNumber ||
-                selectedOrder?.id?.slice(0, 8).toUpperCase()}
+              Order #{selectedOrder?.orderId}
             </DialogDescription>
           </DialogHeader>
           {selectedOrder && (
@@ -410,102 +436,224 @@ export function OrdersPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Customer</p>
-                  <p className="font-medium">{selectedOrder.userName}</p>
+                  <p className="font-medium">
+                    {typeof selectedOrder.userId === "object" &&
+                    selectedOrder.userId.profile
+                      ? `${selectedOrder.userId.profile.firstName} ${selectedOrder.userId.profile.lastName}`
+                      : "Unknown"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedOrder.userEmail}</p>
+                  <p className="font-medium">
+                    {typeof selectedOrder.userId === "object"
+                      ? selectedOrder.userId.email
+                      : ""}
+                  </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Restaurant</p>
-                  <p className="font-medium">{selectedOrder.restaurantName}</p>
+                  <p className="font-medium">
+                    {typeof selectedOrder.restaurantId === "object"
+                      ? selectedOrder.restaurantId.name
+                      : "Unknown"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Payment Method</p>
-                  <p className="font-medium">{selectedOrder.paymentMethod}</p>
+                  <p className="text-muted-foreground">Rider</p>
+                  <p className="font-medium">
+                    {typeof selectedOrder.riderId === "object" &&
+                    selectedOrder.riderId.profile
+                      ? `${selectedOrder.riderId.profile.firstName} ${selectedOrder.riderId.profile.lastName}`
+                      : selectedOrder.riderId
+                        ? "Assigned"
+                        : "Not assigned"}
+                  </p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Delivery Address</p>
                   <p className="font-medium">
-                    {selectedOrder.deliveryAddress?.street},{" "}
-                    {selectedOrder.deliveryAddress?.city},{" "}
-                    {selectedOrder.deliveryAddress?.state}{" "}
-                    {selectedOrder.deliveryAddress?.zipCode}
+                    {selectedOrder.deliveryAddress.street},{" "}
+                    {selectedOrder.deliveryAddress.city},{" "}
+                    {selectedOrder.deliveryAddress.state}{" "}
+                    {selectedOrder.deliveryAddress.zipCode}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Subtotal</p>
-                  <p className="font-medium">
-                    ${selectedOrder.subtotal?.toFixed(2)}
+                  <p className="text-muted-foreground">Payment Method</p>
+                  <p className="font-medium capitalize">
+                    {selectedOrder.paymentMethod}
                   </p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Delivery Fee</p>
-                  <p className="font-medium">
-                    ${selectedOrder.deliveryFee?.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Tax</p>
-                  <p className="font-medium">
-                    ${selectedOrder.tax?.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Discount</p>
-                  <p className="font-medium">
-                    -${selectedOrder.discount?.toFixed(2)}
-                  </p>
+                  <p className="text-muted-foreground">Payment Status</p>
+                  <Badge
+                    variant={
+                      paymentStatusColors[selectedOrder.paymentStatus] ||
+                      "default"
+                    }
+                    className="capitalize"
+                  >
+                    {selectedOrder.paymentStatus.replace(/_/g, " ")}
+                  </Badge>
                 </div>
                 <div className="col-span-2 border-t pt-2">
-                  <p className="text-muted-foreground">Total</p>
-                  <p className="text-xl font-bold">
-                    ${selectedOrder.total?.toFixed(2)}
-                  </p>
+                  <div className="grid grid-cols-4 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Subtotal</p>
+                      <p className="font-medium">
+                        ${selectedOrder.orderTotal?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Delivery Fee</p>
+                      <p className="font-medium">
+                        ${selectedOrder.deliveryFee?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Tax</p>
+                      <p className="font-medium">
+                        ${selectedOrder.tax?.toFixed(2)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Grand Total</p>
+                      <p className="font-bold text-lg">
+                        ${selectedOrder.grandTotal?.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div className="border-t pt-4">
                 <Label>Update Status</Label>
-                <Select value={newStatus} onValueChange={setNewStatus}>
+                <Select
+                  value={newStatus}
+                  onValueChange={(value: OrderStatus) => setNewStatus(value)}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="preparing">Preparing</SelectItem>
-                    <SelectItem value="ready_for_pickup">
-                      Ready for Pickup
-                    </SelectItem>
-                    <SelectItem value="pickedup">Picked Up</SelectItem>
-                    <SelectItem value="out_for_delivery">
-                      Out for Delivery
-                    </SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    {getValidNextStatuses(selectedOrder.status).map(
+                      (status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace(/_/g, " ")}
+                        </SelectItem>
+                      ),
+                    )}
+                    {selectedOrder.status !== "cancelled" && (
+                      <SelectItem value="cancelled">Cancel Order</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
+
               {selectedOrder.items && selectedOrder.items.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-2">Order Items</h4>
                   <div className="space-y-2">
-                    {selectedOrder.items.map((item: any) => (
+                    {selectedOrder.items.map((item) => (
                       <div
-                        key={item.id}
+                        key={
+                          item.foodItemId && typeof item.foodItemId === "object"
+                            ? item.foodItemId._id
+                            : item.foodItemId || item.name
+                        }
                         className="flex items-center justify-between p-2 bg-muted rounded"
                       >
                         <div>
-                          <p className="font-medium">{item.foodName}</p>
+                          <p className="font-medium">{item.name}</p>
                           <p className="text-sm text-muted-foreground">
                             Qty: {item.quantity}
                           </p>
+                          {item.specialInstructions && (
+                            <p className="text-xs text-muted-foreground">
+                              {item.specialInstructions}
+                            </p>
+                          )}
                         </div>
                         <p className="font-medium">
                           ${(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedOrder.appliedOffer && (
+                <div className="bg-green-50 border border-green-200 rounded p-3">
+                  <p className="text-sm text-green-800">
+                    <strong>Offer Applied:</strong>{" "}
+                    {selectedOrder.appliedOffer.code} - $
+                    {selectedOrder.appliedOffer.discountAmount.toFixed(2)} off
+                  </p>
+                </div>
+              )}
+
+              {selectedOrder.deliveryDetails && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-2">Delivery Details</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">
+                        Estimated Delivery
+                      </p>
+                      <p>
+                        {selectedOrder.estimatedDelivery
+                          ? format(
+                              new Date(selectedOrder.estimatedDelivery),
+                              "MMM dd, yyyy HH:mm",
+                            )
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Preparation Time</p>
+                      <p>{selectedOrder.preparationTime} min</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Assigned At</p>
+                      <p>
+                        {selectedOrder.deliveryDetails.assignedAt
+                          ? format(
+                              new Date(
+                                selectedOrder.deliveryDetails.assignedAt,
+                              ),
+                              "MMM dd, yyyy HH:mm",
+                            )
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Picked Up At</p>
+                      <p>
+                        {selectedOrder.deliveryDetails.pickedUpAt
+                          ? format(
+                              new Date(
+                                selectedOrder.deliveryDetails.pickedUpAt,
+                              ),
+                              "MMM dd, yyyy HH:mm",
+                            )
+                          : "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Delivered At</p>
+                      <p>
+                        {selectedOrder.deliveryDetails.deliveredAt
+                          ? format(
+                              new Date(
+                                selectedOrder.deliveryDetails.deliveredAt,
+                              ),
+                              "MMM dd, yyyy HH:mm",
+                            )
+                          : "N/A"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}

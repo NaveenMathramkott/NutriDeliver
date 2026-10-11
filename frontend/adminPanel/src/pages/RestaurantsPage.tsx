@@ -3,10 +3,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Search,
-  Filter,
   MoreVertical,
-  Edit,
-  Trash2,
   CheckCircle2,
   XCircle,
   Store,
@@ -15,6 +12,8 @@ import {
   Mail,
   Star,
   Truck,
+  Shield,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +35,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -69,24 +67,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import type { Restaurant } from "@/types";
 
-const statusColors: Record<
-  string,
-  "default" | "success" | "warning" | "destructive" | "secondary"
-> = {
-  active: "success",
-  inactive: "secondary",
-  pending: "warning",
-  rejected: "destructive",
+const statusColors = {
+  true: "success" as const,
+  false: "secondary" as const,
 };
 
 export function RestaurantsPage() {
-  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -94,9 +88,8 @@ export function RestaurantsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedRestaurant, setSelectedRestaurant] = useState<any | null>(
-    null,
-  );
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
 
@@ -108,12 +101,16 @@ export function RestaurantsPage() {
         limit: 10,
         search: searchQuery,
         status: statusFilter,
-        verified: verifiedFilter === "true",
+        verified: verifiedFilter === "" ? undefined : verifiedFilter === "true",
       });
       if (response.success && response.data) {
-        setRestaurants(response.data.data);
-        setTotalPages(response.data.totalPages);
-        setTotal(response.data.total);
+        const data = response.data as {
+          restaurants: Restaurant[];
+          pagination: { current: number; pages: number; total: number };
+        };
+        setRestaurants(data.restaurants);
+        setTotalPages(data.pagination.pages);
+        setTotal(data.pagination.total);
       }
     } catch (error) {
       console.error("Failed to fetch restaurants:", error);
@@ -137,13 +134,13 @@ export function RestaurantsPage() {
     fetchRestaurants();
   };
 
-  const handleVerify = async (restaurant: any) => {
+  const handleVerify = async (restaurant: Restaurant, isVerified: boolean) => {
     try {
-      const response = await api.verifyRestaurant(restaurant.id);
+      const response = await api.verifyRestaurant(restaurant._id);
       if (response.success) {
         toast({
           title: "Success",
-          description: "Restaurant verified successfully",
+          description: `Restaurant ${isVerified ? "unverified" : "verified"}`,
           variant: "success",
         });
         fetchRestaurants();
@@ -151,19 +148,25 @@ export function RestaurantsPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to verify restaurant",
+        description: "Failed to update verification",
         variant: "destructive",
       });
     }
   };
 
-  const handleStatusChange = async (restaurant: any, status: string) => {
+  const handleStatusChange = async (
+    restaurant: Restaurant,
+    isActive: boolean,
+  ) => {
     try {
-      const response = await api.updateRestaurantStatus(restaurant.id, status);
+      const response = await api.updateRestaurantStatus(
+        restaurant._id,
+        isActive ? "active" : "inactive",
+      );
       if (response.success) {
         toast({
           title: "Success",
-          description: `Restaurant status updated to ${status}`,
+          description: `Restaurant ${isActive ? "activated" : "deactivated"}`,
           variant: "success",
         });
         fetchRestaurants();
@@ -181,7 +184,7 @@ export function RestaurantsPage() {
     if (!selectedRestaurant) return;
     try {
       const response = await api.updateRestaurantStatus(
-        selectedRestaurant.id,
+        selectedRestaurant._id,
         "inactive",
       );
       if (response.success) {
@@ -202,7 +205,7 @@ export function RestaurantsPage() {
     }
   };
 
-  const openVerifyDialog = (restaurant: any) => {
+  const openVerifyDialog = (restaurant: Restaurant) => {
     setSelectedRestaurant(restaurant);
     setIsVerifyDialogOpen(true);
   };
@@ -243,8 +246,6 @@ export function RestaurantsPage() {
                 <SelectItem value="">All Statuses</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Select value={verifiedFilter} onValueChange={setVerifiedFilter}>
@@ -269,6 +270,7 @@ export function RestaurantsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Verified</TableHead>
                   <TableHead>Rating</TableHead>
+                  <TableHead>Delivery</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -276,24 +278,24 @@ export function RestaurantsPage() {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="flex justify-center">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : restaurants?.length === 0 ? (
+                ) : restaurants.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={9}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No restaurants found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  restaurants?.map((restaurant) => (
-                    <TableRow key={restaurant.id}>
+                  restaurants.map((restaurant) => (
+                    <TableRow key={restaurant._id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -302,30 +304,29 @@ export function RestaurantsPage() {
                           <div>
                             <p className="font-medium">{restaurant.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {restaurant.cuisine?.join(", ") || "N/A"}
+                              {restaurant.description}
                             </p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <p className="font-medium">
-                          {restaurant.ownerName || "N/A"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {restaurant.ownerEmail || "N/A"}
+                          {restaurant.contact?.email || "N/A"}
                         </p>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm">
-                          {restaurant.cuisine?.[0] || "N/A"}
-                        </span>
+                        <Badge variant="secondary" className="capitalize">
+                          {restaurant.cuisineType}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={statusColors[restaurant.status] || "default"}
+                          variant={
+                            restaurant.isActive ? "success" : "secondary"
+                          }
                           className="capitalize"
                         >
-                          {restaurant.status}
+                          {restaurant.isActive ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -341,15 +342,39 @@ export function RestaurantsPage() {
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                           <span>{restaurant.rating?.toFixed(1) || "0.0"}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({restaurant.totalReviews} reviews)
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span>
+                            $
+                            {restaurant.deliverySettings?.deliveryFee?.toFixed(
+                              2,
+                            ) || "0.00"}{" "}
+                            fee
+                          </span>
+                          <span className="text-muted-foreground">
+                            Min: $
+                            {restaurant.deliverySettings?.minOrderAmount?.toFixed(
+                              2,
+                            ) || "0.00"}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {restaurant.deliverySettings?.deliveryRadius}km
+                            radius
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <MapPin className="h-3 w-3" />
                           <span className="truncate max-w-[150px]">
-                            {restaurant.address?.city ||
-                              restaurant.address ||
-                              "N/A"}
+                            {restaurant.contact?.address?.street},{" "}
+                            {restaurant.contact?.address?.city},{" "}
+                            {restaurant.contact?.address?.state}
                           </span>
                         </div>
                       </TableCell>
@@ -365,26 +390,33 @@ export function RestaurantsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {!restaurant.isVerified && (
-                              <DropdownMenuItem
-                                onClick={() => openVerifyDialog(restaurant)}
-                              >
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Verify Restaurant
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleVerify(restaurant, !restaurant.isVerified)
+                              }
+                            >
+                              {restaurant.isVerified ? (
+                                <>
+                                  <XCircle className="mr-2 h-4 w-4" />
+                                  Unverify
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  Verify
+                                </>
+                              )}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() =>
                                 handleStatusChange(
                                   restaurant,
-                                  restaurant.status === "active"
-                                    ? "inactive"
-                                    : "active",
+                                  !restaurant.isActive,
                                 )
                               }
                             >
-                              {restaurant.status === "active" ? (
+                              {restaurant.isActive ? (
                                 <>
                                   <XCircle className="mr-2 h-4 w-4" />
                                   Deactivate
@@ -396,6 +428,7 @@ export function RestaurantsPage() {
                                 </>
                               )}
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedRestaurant(restaurant);
@@ -403,7 +436,9 @@ export function RestaurantsPage() {
                               }}
                             >
                               <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                              <span className="text-destructive">Delete</span>
+                              <span className="text-destructive">
+                                Deactivate
+                              </span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -491,7 +526,8 @@ export function RestaurantsPage() {
           <DialogHeader>
             <DialogTitle>Verify Restaurant</DialogTitle>
             <DialogDescription>
-              Verify {selectedRestaurant?.name} to allow them to receive orders.
+              {selectedRestaurant?.isVerified ? "Unverify" : "Verify"}{" "}
+              {selectedRestaurant?.name}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -503,11 +539,14 @@ export function RestaurantsPage() {
             </Button>
             <Button
               onClick={() => {
-                handleVerify(selectedRestaurant!);
+                handleVerify(
+                  selectedRestaurant!,
+                  !selectedRestaurant!.isVerified,
+                );
                 setIsVerifyDialogOpen(false);
               }}
             >
-              Verify
+              {selectedRestaurant?.isVerified ? "Unverify" : "Verify"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,19 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Save,
   Bell,
   Shield,
   Globe,
-  Palette,
-  Database,
   Mail,
   Truck,
   CreditCard,
   Utensils,
   Key,
-  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,192 +34,47 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/services/api";
-
-const generalSettings = [
-  {
-    key: "platformName",
-    label: "Platform Name",
-    type: "text",
-    placeholder: "NutriDeliver",
-  },
-  {
-    key: "supportEmail",
-    label: "Support Email",
-    type: "email",
-    placeholder: "support@nutrideliver.com",
-  },
-  {
-    key: "supportPhone",
-    label: "Support Phone",
-    type: "tel",
-    placeholder: "+1 234 567 8900",
-  },
-  {
-    key: "defaultCurrency",
-    label: "Default Currency",
-    type: "select",
-    options: ["USD", "EUR", "GBP", "INR"],
-  },
-  {
-    key: "timezone",
-    label: "Timezone",
-    type: "select",
-    options: [
-      "UTC",
-      "America/New_York",
-      "America/Los_Angeles",
-      "Europe/London",
-      "Asia/Kolkata",
-    ],
-  },
-  { key: "maintenanceMode", label: "Maintenance Mode", type: "boolean" },
-];
-
-const notificationSettings = [
-  { key: "emailNotifications", label: "Email Notifications", type: "boolean" },
-  { key: "pushNotifications", label: "Push Notifications", type: "boolean" },
-  { key: "smsNotifications", label: "SMS Notifications", type: "boolean" },
-  { key: "orderNotifications", label: "Order Updates", type: "boolean" },
-  { key: "paymentNotifications", label: "Payment Alerts", type: "boolean" },
-  { key: "marketingEmails", label: "Marketing Emails", type: "boolean" },
-];
-
-const securitySettings = [
-  { key: "twoFactorAuth", label: "Two-Factor Authentication", type: "boolean" },
-  {
-    key: "sessionTimeout",
-    label: "Session Timeout (minutes)",
-    type: "number",
-    placeholder: "60",
-  },
-  {
-    key: "maxLoginAttempts",
-    label: "Max Login Attempts",
-    type: "number",
-    placeholder: "5",
-  },
-  {
-    key: "passwordMinLength",
-    label: "Minimum Password Length",
-    type: "number",
-    placeholder: "8",
-  },
-  {
-    key: "requireEmailVerification",
-    label: "Require Email Verification",
-    type: "boolean",
-  },
-];
-
-const deliverySettings = [
-  {
-    key: "defaultDeliveryFee",
-    label: "Default Delivery Fee",
-    type: "number",
-    placeholder: "3.99",
-  },
-  {
-    key: "freeDeliveryThreshold",
-    label: "Free Delivery Threshold",
-    type: "number",
-    placeholder: "50.00",
-  },
-  {
-    key: "maxDeliveryRadius",
-    label: "Max Delivery Radius (km)",
-    type: "number",
-    placeholder: "15",
-  },
-  { key: "autoAssignRiders", label: "Auto-assign Riders", type: "boolean" },
-  {
-    key: "riderTimeout",
-    label: "Rider Acceptance Timeout (seconds)",
-    type: "number",
-    placeholder: "60",
-  },
-];
-
-const paymentSettings = [
-  { key: "stripeEnabled", label: "Enable Stripe", type: "boolean" },
-  {
-    key: "stripePublishableKey",
-    label: "Stripe Publishable Key",
-    type: "text",
-    placeholder: "pk_test_...",
-  },
-  {
-    key: "stripeSecretKey",
-    label: "Stripe Secret Key",
-    type: "password",
-    placeholder: "sk_test_...",
-  },
-  { key: "walletEnabled", label: "Enable Wallet", type: "boolean" },
-  { key: "cashOnDelivery", label: "Cash on Delivery", type: "boolean" },
-];
-
-const restaurantSettings = [
-  {
-    key: "autoApproveRestaurants",
-    label: "Auto-approve Restaurants",
-    type: "boolean",
-  },
-  {
-    key: "minOrderAmount",
-    label: "Default Min Order Amount",
-    type: "number",
-    placeholder: "15.00",
-  },
-  {
-    key: "commissionRate",
-    label: "Platform Commission Rate (%)",
-    type: "number",
-    placeholder: "15",
-  },
-  {
-    key: "maxMenuItems",
-    label: "Max Menu Items per Restaurant",
-    type: "number",
-    placeholder: "100",
-  },
-];
+import type { SystemSettings } from "@/types";
 
 export function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<SystemSettings["settings"]>({
     platformName: "NutriDeliver",
     supportEmail: "support@nutrideliver.com",
-    supportPhone: "+1 234 567 8900",
-    defaultCurrency: "USD",
-    timezone: "UTC",
-    maintenanceMode: false,
-    emailNotifications: true,
-    pushNotifications: true,
-    smsNotifications: false,
-    orderNotifications: true,
-    paymentNotifications: true,
-    marketingEmails: false,
-    twoFactorAuth: false,
+    defaultDeliveryFee: 3.99,
+    taxRate: 8.5,
+    maxDeliveryRadius: 15,
+    freeDeliveryThreshold: 50,
     sessionTimeout: 60,
     maxLoginAttempts: 5,
     passwordMinLength: 8,
-    requireEmailVerification: true,
-    defaultDeliveryFee: 3.99,
-    freeDeliveryThreshold: 50.0,
-    maxDeliveryRadius: 15,
-    autoAssignRiders: true,
-    riderTimeout: 60,
-    stripeEnabled: true,
     stripePublishableKey: "",
     stripeSecretKey: "",
-    walletEnabled: true,
-    cashOnDelivery: true,
-    autoApproveRestaurants: false,
-    minOrderAmount: 15.0,
+    minOrderAmount: 15,
     commissionRate: 15,
     maxMenuItems: 100,
+    riderTimeout: 60,
   });
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleChange = (key: string, value: any) => {
+  const fetchSettings = async () => {
+    try {
+      const response = await api.getSettings();
+      if (response.success && response.data) {
+        setSettings(response.data.settings);
+      }
+    } catch (error) {
+      console.error("Failed to fetch settings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const handleChange = (key: keyof typeof settings, value: any) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -239,7 +91,7 @@ export function SettingsPage() {
       } else {
         toast({
           title: "Error",
-          description: "Failed to save settings",
+          description: response.message || "Failed to save settings",
           variant: "destructive",
         });
       }
@@ -254,102 +106,82 @@ export function SettingsPage() {
     }
   };
 
-  const renderSetting = (setting: {
-    key: string;
-    label: string;
-    type: string;
-    placeholder?: string;
-    options?: string[];
-  }) => {
-    const value = settings[setting.key as keyof typeof settings];
+  const renderSetting = (
+    label: string,
+    key: keyof typeof settings,
+    type: "text" | "email" | "number" | "select" | "boolean" = "text",
+    options?: { value: string; label: string }[],
+  ) => {
+    const value = settings[key];
 
-    const handleBooleanChange = (checked: boolean) => {
-      handleChange(setting.key, checked);
-    };
-
-    const handleStringChange = (val: string) => {
-      handleChange(setting.key, val);
-    };
-
-    const handleNumberChange = (val: string) => {
-      handleChange(setting.key, parseFloat(val) || 0);
-    };
-
-    switch (setting.type) {
-      case "boolean":
-        return (
-          <div className="flex items-center justify-between">
-            <Label>{setting.label}</Label>
-            <Switch
-              checked={value as boolean}
-              onCheckedChange={handleBooleanChange}
-            />
-          </div>
-        );
-      case "select":
-        return (
-          <div className="space-y-2">
-            <Label>{setting.label}</Label>
-            <Select value={value as string} onValueChange={handleStringChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent>
-                {setting.options?.map((opt: string) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        );
-      case "number":
-        return (
-          <div className="space-y-2">
-            <Label>{setting.label}</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={value as number}
-              onChange={(e) => handleNumberChange(e.target.value)}
-              placeholder={setting.placeholder}
-            />
-          </div>
-        );
-      case "password":
-        return (
-          <div className="space-y-2">
-            <Label>{setting.label}</Label>
-            <Input
-              type="password"
-              value={value as string}
-              onChange={(e) => handleStringChange(e.target.value)}
-              placeholder={setting.placeholder}
-            />
-          </div>
-        );
-      default:
-        return (
-          <div className="space-y-2">
-            <Label>{setting.label}</Label>
-            <Input
-              value={value as string}
-              onChange={(e) => handleStringChange(e.target.value)}
-              placeholder={setting.placeholder}
-            />
-          </div>
-        );
+    if (type === "boolean") {
+      return (
+        <div className="flex items-center justify-between">
+          <Label>{label}</Label>
+          <Switch
+            checked={Boolean(value)}
+            onCheckedChange={(checked) => handleChange(key, checked)}
+          />
+        </div>
+      );
     }
+
+    if (type === "select") {
+      return (
+        <div className="space-y-2">
+          <Label>{label}</Label>
+          <Select
+            value={value as string}
+            onValueChange={(val) => handleChange(key, val)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select..." />
+            </SelectTrigger>
+            <SelectContent>
+              {options?.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+
+    if (type === "number") {
+      return (
+        <div className="space-y-2">
+          <Label>{label}</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={value}
+            onChange={(e) => handleChange(key, parseFloat(e.target.value) || 0)}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <Input
+          type={type}
+          value={value}
+          onChange={(e) => handleChange(key, e.target.value)}
+        />
+      </div>
+    );
   };
 
   const renderSection = (
     title: string,
     Icon: React.ComponentType<{ className?: string }>,
     description: string,
-    settingsList: any[],
+    children: React.ReactNode,
   ) => (
-    <TabsContent value={title.toLowerCase().replace(/\s+/g, "")}>
+    <TabsContent value={title.toLowerCase()}>
       <div className="space-y-6 pt-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -361,11 +193,7 @@ export function SettingsPage() {
           </div>
         </div>
         <Separator />
-        <div className="grid gap-6 md:grid-cols-2">
-          {settingsList.map((setting) => (
-            <div key={setting.key}>{renderSetting(setting)}</div>
-          ))}
-        </div>
+        {children}
       </div>
     </TabsContent>
   );
@@ -397,37 +225,161 @@ export function SettingsPage() {
           "General",
           Globe,
           "Basic platform configuration",
-          generalSettings,
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderSetting("Platform Name", "platformName", "text")}
+            {renderSetting("Support Email", "supportEmail", "email")}
+            {renderSetting(
+              "Default Delivery Fee",
+              "defaultDeliveryFee",
+              "number",
+            )}
+            {renderSetting("Tax Rate (%)", "taxRate", "number")}
+            {renderSetting(
+              "Max Delivery Radius (km)",
+              "maxDeliveryRadius",
+              "number",
+            )}
+          </div>,
         )}
+
         {renderSection(
           "Notifications",
           Bell,
-          "Notification preferences and channels",
-          notificationSettings,
+          "Notification preferences",
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Email Notifications</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>Push Notifications</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>SMS Notifications</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>Order Updates</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment Alerts</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>Marketing Emails</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+          </div>,
         )}
+
         {renderSection(
           "Security",
           Shield,
           "Security and authentication settings",
-          securitySettings,
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Two-Factor Authentication</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            {renderSetting(
+              "Session Timeout (minutes)",
+              "sessionTimeout",
+              "number",
+            )}
+            {renderSetting("Max Login Attempts", "maxLoginAttempts", "number")}
+            {renderSetting(
+              "Min Password Length",
+              "passwordMinLength",
+              "number",
+            )}
+            <div className="space-y-2">
+              <Label>Require Email Verification</Label>
+              <Switch checked={true} onCheckedChange={() => {}} />
+            </div>
+          </div>,
         )}
+
         {renderSection(
           "Delivery",
           Truck,
           "Delivery and logistics configuration",
-          deliverySettings,
+          <div className="grid gap-6 md:grid-cols-2">
+            {renderSetting(
+              "Default Delivery Fee",
+              "defaultDeliveryFee",
+              "number",
+            )}
+            {renderSetting(
+              "Free Delivery Threshold",
+              "freeDeliveryThreshold",
+              "number",
+            )}
+            {renderSetting(
+              "Max Delivery Radius (km)",
+              "maxDeliveryRadius",
+              "number",
+            )}
+            <div className="space-y-2">
+              <Label>Auto-assign Riders</Label>
+              <Switch checked={true} onCheckedChange={() => {}} />
+            </div>
+            {renderSetting("Rider Timeout (seconds)", "riderTimeout", "number")}
+          </div>,
         )}
+
         {renderSection(
           "Payments",
           CreditCard,
-          "Payment gateway and transaction settings",
-          paymentSettings,
+          "Payment gateway configuration",
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Enable Stripe</Label>
+              <Switch checked={true} onCheckedChange={() => {}} />
+            </div>
+            {renderSetting(
+              "Stripe Publishable Key",
+              "stripePublishableKey",
+              "text",
+            )}
+            {renderSetting("Stripe Secret Key", "stripeSecretKey", "text")}
+            <div className="space-y-2">
+              <Label>Enable Wallet</Label>
+              <Switch checked={true} onCheckedChange={() => {}} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cash on Delivery</Label>
+              <Switch checked={true} onCheckedChange={() => {}} />
+            </div>
+          </div>,
         )}
+
         {renderSection(
           "Restaurants",
           Utensils,
           "Restaurant onboarding and management",
-          restaurantSettings,
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Auto-approve Restaurants</Label>
+              <Switch checked={false} onCheckedChange={() => {}} />
+            </div>
+            {renderSetting(
+              "Default Min Order Amount",
+              "minOrderAmount",
+              "number",
+            )}
+            {renderSetting(
+              "Platform Commission Rate (%)",
+              "commissionRate",
+              "number",
+            )}
+            {renderSetting(
+              "Max Menu Items per Restaurant",
+              "maxMenuItems",
+              "number",
+            )}
+          </div>,
         )}
       </Tabs>
     </div>
