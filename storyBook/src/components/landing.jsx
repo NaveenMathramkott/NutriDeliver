@@ -99,7 +99,7 @@ const STATS = [
 export function Landing() {
   useEffect(() => {
     document.title =
-      "NutriDeliver — Build a Food Delivery Platform From Scratch";
+      "NutriDeliver — Build an AI Food Delivery Platform From Scratch";
   }, []);
 
   return (
