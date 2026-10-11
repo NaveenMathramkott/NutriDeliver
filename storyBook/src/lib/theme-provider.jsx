@@ -4,9 +4,7 @@ import { ThemeContext } from "./theme-context";
 const STORAGE_KEY = "nutridocs-theme";
 
 export function ThemeProvider({ children }) {
-  // The inline script in index.html already resolved the theme before paint, so
-  // read it back off <html> rather than recomputing — that keeps React state
-  // and the DOM from ever disagreeing.
+  // read back off <html>; the inline script already resolved it pre-paint
   const [theme, setTheme] = useState(() =>
     typeof document !== "undefined" &&
     document.documentElement.classList.contains("dark")
@@ -19,7 +17,7 @@ export function ThemeProvider({ children }) {
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {
-      // Storage can be unavailable in private mode; in-memory state still works.
+      // private mode can block storage; in-memory state still works
     }
   }, [theme]);
 

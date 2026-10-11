@@ -6,9 +6,7 @@ export function SearchProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  // `null` until first needed. Loading and rendering all 34 chapters to extract
-  // their text is work a visitor who never searches should not pay for, so the
-  // corpus is built on first open rather than at module load.
+  // deferred until first open — most visitors never need all chapters
   const [index, setIndex] = useState(null);
 
   const results = useMemo(() => {
@@ -22,8 +20,7 @@ export function SearchProvider({ children }) {
       buildIndex()
         .then(setIndex)
         .catch(() => {
-          // A failed index degrades search to an empty palette rather than
-          // taking the page down with it.
+          // degrade to an empty palette rather than taking the page down
           setIndex([]);
         });
     }
