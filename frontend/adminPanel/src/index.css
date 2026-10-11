@@ -1,111 +1,123 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --font-sans: Inter, system-ui, sans-serif;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* NutriDeliver brand ramp, generated from #A73D4D */
+  --color-nutrideliver-50: #faf4f5;
+  --color-nutrideliver-100: #f5e6e8;
+  --color-nutrideliver-200: #e9c8cd;
+  --color-nutrideliver-300: #dca8b0;
+  --color-nutrideliver-400: #ce838e;
+  --color-nutrideliver-500: #a73d4d;
+  --color-nutrideliver-600: #8e3441;
+  --color-nutrideliver-700: #752934;
+  --color-nutrideliver-800: #5f212a;
+  --color-nutrideliver-900: #4c1a22;
+  --color-nutrideliver-950: #351218;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --color-fresh-50: #f0fdf4;
+  --color-fresh-100: #dcfce7;
+  --color-fresh-200: #bbf7d0;
+  --color-fresh-300: #86efac;
+  --color-fresh-400: #4ade80;
+  --color-fresh-500: #22c55e;
+  --color-fresh-600: #16a34a;
+  --color-fresh-700: #15803d;
+  --color-fresh-800: #166534;
+  --color-fresh-900: #14532d;
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    /* Warm neutral tinted with the brand hue */
+    --background: 340 40% 99%;
+    --foreground: 345 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 345 25% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 345 25% 12%;
+    /* #A73D4D */
+    --primary: 351 46% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 345 30% 94%;
+    --secondary-foreground: 345 25% 12%;
+    --muted: 345 25% 95%;
+    --muted-foreground: 345 12% 42%;
+    --accent: 345 35% 93%;
+    --accent-foreground: 345 30% 20%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 345 25% 89%;
+    --input: 345 25% 89%;
+    --ring: 351 46% 45%;
+    --radius: 0.75rem;
   }
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  .dark {
+    --background: 345 20% 7%;
+    --foreground: 345 20% 96%;
+    --card: 345 18% 10%;
+    --card-foreground: 345 20% 96%;
+    --popover: 345 18% 10%;
+    --popover-foreground: 345 20% 96%;
+    /* Lightened brand tone so it stays legible on dark surfaces */
+    --primary: 351 60% 62%;
+    --primary-foreground: 345 30% 10%;
+    --secondary: 345 12% 18%;
+    --secondary-foreground: 345 20% 96%;
+    --muted: 345 12% 18%;
+    --muted-foreground: 345 10% 68%;
+    --accent: 345 14% 20%;
+    --accent-foreground: 345 20% 96%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 345 12% 22%;
+    --input: 345 12% 22%;
+    --ring: 351 60% 62%;
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

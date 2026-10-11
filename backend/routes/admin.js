@@ -1,51 +1,68 @@
-import express from 'express';
-import { authenticate, authorize } from '../middleware/auth.js';
-import { uploadSingle, handleUploadError } from '../middleware/upload.js';
+import express from "express";
+import { authenticate, authorize } from "../middleware/auth.js";
+import { uploadSingle, handleUploadError } from "../middleware/upload.js";
 import {
   // User management
   getAllUsers,
   getUserById,
   updateUserStatus,
   deleteUser,
-  
+
   // Restaurant management
   getAllRestaurants,
   getRestaurantById,
   verifyRestaurant,
   updateRestaurantStatus,
-  
+
   // Order management
   getAllOrders,
   getOrderById,
   updateOrder,
-  
+
   // Analytics
   getPlatformAnalytics,
   getSalesAnalytics,
   getUserAnalytics,
-  
+
+  // Admin management
+  getAllAdmins,
+  getAdminById,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
+
+  // Food management
+  getAllFoodItems,
+
+  // Offer management
+  getAllOffers,
+
+  // Payment management
+  getAllPayments,
+
   // Category management
+  getAllCategories,
+  getCategoryById,
   createCategory,
   updateCategory,
   deleteCategory,
-  
-  
+
   // Rider management
   getAllRiders,
   getRiderById,
   verifyRider,
   updateRiderStatus,
-  
+
   // System settings
   updateSystemSettings,
-  getSystemSettings
-} from '../controllers/adminController.js';
+  getSystemSettings,
+} from "../controllers/adminController.js";
 
 const router = express.Router();
 
 // All admin routes require admin authentication
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize("admin"));
 
 /**
  * @swagger
@@ -79,7 +96,7 @@ router.use(authorize('admin'));
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/users', getAllUsers);
+router.get("/users", getAllUsers);
 
 /**
  * @swagger
@@ -109,7 +126,7 @@ router.get('/users', getAllUsers);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/users/:id', getUserById);
+router.get("/users/:id", getUserById);
 
 /**
  * @swagger
@@ -150,7 +167,7 @@ router.get('/users/:id', getUserById);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/users/:id/status', updateUserStatus);
+router.put("/users/:id/status", updateUserStatus);
 
 /**
  * @swagger
@@ -180,7 +197,7 @@ router.put('/users/:id/status', updateUserStatus);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/users/:id', deleteUser);
+router.delete("/users/:id", deleteUser);
 
 /**
  * @swagger
@@ -213,7 +230,7 @@ router.delete('/users/:id', deleteUser);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/restaurants', getAllRestaurants);
+router.get("/restaurants", getAllRestaurants);
 
 /**
  * @swagger
@@ -243,7 +260,7 @@ router.get('/restaurants', getAllRestaurants);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/restaurants/:id', getRestaurantById);
+router.get("/restaurants/:id", getRestaurantById);
 
 /**
  * @swagger
@@ -278,7 +295,7 @@ router.get('/restaurants/:id', getRestaurantById);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/restaurants/:id/verify', verifyRestaurant);
+router.put("/restaurants/:id/verify", verifyRestaurant);
 
 /**
  * @swagger
@@ -313,7 +330,7 @@ router.put('/restaurants/:id/verify', verifyRestaurant);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/restaurants/:id/status', updateRestaurantStatus);
+router.put("/restaurants/:id/status", updateRestaurantStatus);
 
 /**
  * @swagger
@@ -346,7 +363,7 @@ router.put('/restaurants/:id/status', updateRestaurantStatus);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/riders', getAllRiders);
+router.get("/riders", getAllRiders);
 
 /**
  * @swagger
@@ -376,7 +393,7 @@ router.get('/riders', getAllRiders);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/riders/:id', getRiderById);
+router.get("/riders/:id", getRiderById);
 
 /**
  * @swagger
@@ -411,7 +428,7 @@ router.get('/riders/:id', getRiderById);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/riders/:id/verify', verifyRider);
+router.put("/riders/:id/verify", verifyRider);
 
 /**
  * @swagger
@@ -446,7 +463,7 @@ router.put('/riders/:id/verify', verifyRider);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/riders/:id/status', updateRiderStatus);
+router.put("/riders/:id/status", updateRiderStatus);
 
 /**
  * @swagger
@@ -479,7 +496,7 @@ router.put('/riders/:id/status', updateRiderStatus);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/orders', getAllOrders);
+router.get("/orders", getAllOrders);
 
 /**
  * @swagger
@@ -509,7 +526,7 @@ router.get('/orders', getAllOrders);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/orders/:id', getOrderById);
+router.get("/orders/:id", getOrderById);
 
 /**
  * @swagger
@@ -539,7 +556,74 @@ router.get('/orders/:id', getOrderById);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/orders/:id', updateOrder);
+router.put("/orders/:id", updateOrder);
+
+/**
+ * @swagger
+ * /admin/categories:
+ *   get:
+ *     summary: Get all categories
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Paginated list of categories
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ */
+router.get("/categories", getAllCategories);
+
+/**
+ * @swagger
+ * /admin/categories/{id}:
+ *   get:
+ *     summary: Get category by ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Category details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       404:
+ *         description: Category not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get("/categories/:id", getCategoryById);
 
 /**
  * @swagger
@@ -572,7 +656,7 @@ router.put('/orders/:id', updateOrder);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.post('/categories', createCategory);
+router.post("/categories", createCategory);
 
 /**
  * @swagger
@@ -602,7 +686,7 @@ router.post('/categories', createCategory);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/categories/:id', updateCategory);
+router.put("/categories/:id", updateCategory);
 
 /**
  * @swagger
@@ -632,7 +716,7 @@ router.put('/categories/:id', updateCategory);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/categories/:id', deleteCategory);
+router.delete("/categories/:id", deleteCategory);
 
 /**
  * @swagger
@@ -650,7 +734,23 @@ router.delete('/categories/:id', deleteCategory);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/analytics/platform', getPlatformAnalytics);
+// Admin management
+router.get("/admins", getAllAdmins);
+router.get("/admins/:id", getAdminById);
+router.post("/admins", createAdmin);
+router.put("/admins/:id", updateAdmin);
+router.delete("/admins/:id", deleteAdmin);
+
+// Food management
+router.get("/food", getAllFoodItems);
+
+// Offer management
+router.get("/offers", getAllOffers);
+
+// Payment management
+router.get("/payments", getAllPayments);
+
+router.get("/analytics/platform", getPlatformAnalytics);
 
 /**
  * @swagger
@@ -668,7 +768,7 @@ router.get('/analytics/platform', getPlatformAnalytics);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/analytics/sales', getSalesAnalytics);
+router.get("/analytics/sales", getSalesAnalytics);
 
 /**
  * @swagger
@@ -686,7 +786,7 @@ router.get('/analytics/sales', getSalesAnalytics);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/analytics/users', getUserAnalytics);
+router.get("/analytics/users", getUserAnalytics);
 
 /**
  * @swagger
@@ -704,7 +804,7 @@ router.get('/analytics/users', getUserAnalytics);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.get('/settings', getSystemSettings);
+router.get("/settings", getSystemSettings);
 
 /**
  * @swagger
@@ -728,6 +828,6 @@ router.get('/settings', getSystemSettings);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.put('/settings', updateSystemSettings);
+router.put("/settings", updateSystemSettings);
 
 export default router;
